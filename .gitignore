@@ -1,7 +1,9 @@
 node_modules
 dist
+server
 .qwik
 *.log
 .env*
 /coverage
 .DS_Store
+*.tsbuildinfo
