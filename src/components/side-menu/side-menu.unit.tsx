@@ -101,7 +101,7 @@ describe('SideMenu useStylesScoped$ (R4)', () => {
       path.resolve(__dirname, './side-menu.tsx'),
       'utf8',
     );
-    expect(src).toMatch(/import\s+styles\s+from\s+['"]\.\/side-menu\.module\.css['"]/);
+    expect(src).toMatch(/import\s+styles\s+from\s+['"]\.\/side-menu\.module\.css(?:\?inline)?['"]/);
   });
 });
 
