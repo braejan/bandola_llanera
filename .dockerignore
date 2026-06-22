@@ -14,4 +14,3 @@ README.md
 docker-compose.yml
 Dockerfile
 .dockerignore
-ssr.vite.config.ts

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---------- builder ----------
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Install full deps (incl. devDeps for the build)
@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build
 
 # ---------- runtime ----------
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 
 # wget is needed by the docker-compose healthcheck to probe the served page.
