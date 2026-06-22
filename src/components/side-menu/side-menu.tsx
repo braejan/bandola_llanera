@@ -1,6 +1,6 @@
 import { component$, useStylesScoped$ } from '@builder.io/qwik';
 import { Link, useLocation } from '@builder.io/qwik-city';
-import styles from './side-menu.module.css';
+import styles from './side-menu.module.css?inline';
 import { type NavEntry, NAV_ENTRIES } from './nav-entries';
 
 // Re-export the data from the module so existing consumers keep working.

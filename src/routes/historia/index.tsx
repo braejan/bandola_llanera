@@ -1,7 +1,7 @@
 import { component$, useStylesScoped$ } from '@builder.io/qwik';
 import { type DocumentHead } from '@builder.io/qwik-city';
 import { historiaArticle } from '~/content/historia';
-import styles from './historia.module.css';
+import styles from './historia.module.css?inline';
 
 export default component$(() => {
   useStylesScoped$(styles);
