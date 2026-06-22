@@ -9,21 +9,25 @@
   "scripts": {
     "build": "qwik build",
     "build.client": "vite build",
-    "build.preview": "vite build --ssr src/entry.preview.tsx",
+    "build.preview": "vite build -c ssr.vite.config.ts",
+    "build.static": "vite build -c ssr.vite.config.ts",
     "build.types": "tsc --incremental --noEmit",
     "dev": "vite --mode ssr",
     "preview": "qwik build preview && vite preview",
     "fmt": "prettier --write .",
     "fmt.check": "prettier --check .",
-    "lint": "eslint \"src/**/*.ts*\"",
     "test": "vitest run",
     "test.watch": "vitest",
     "qwik": "qwik"
+  },
+  "dependencies": {
+    "undici": "*"
   },
   "devDependencies": {
     "@builder.io/qwik": "^1.20.0",
     "@builder.io/qwik-city": "^1.20.0",
     "@types/node": "20.19.0",
+    "ignore": "^5.3.0",
     "typescript": "5.4.5",
     "vite": "^5.4.0",
     "vite-tsconfig-paths": "^4.2.1",
