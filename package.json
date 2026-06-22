@@ -1,0 +1,32 @@
+{
+  "name": "bandola-llanera",
+  "description": "Web sobre la bandola llanera ancestral y tradicional — Maní, Casanare.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "qwik build",
+    "build.client": "vite build",
+    "build.preview": "vite build --ssr src/entry.preview.tsx",
+    "build.types": "tsc --incremental --noEmit",
+    "dev": "vite --mode ssr",
+    "preview": "qwik build preview && vite preview",
+    "fmt": "prettier --write .",
+    "fmt.check": "prettier --check .",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "test": "vitest run",
+    "test.watch": "vitest",
+    "qwik": "qwik"
+  },
+  "devDependencies": {
+    "@builder.io/qwik": "^1.20.0",
+    "@builder.io/qwik-city": "^1.20.0",
+    "@types/node": "20.19.0",
+    "typescript": "5.4.5",
+    "vite": "^5.4.0",
+    "vite-tsconfig-paths": "^4.2.1",
+    "vitest": "^1.6.0"
+  }
+}
