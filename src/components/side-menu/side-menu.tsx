@@ -1,19 +1,11 @@
 import { component$, useStylesScoped$ } from '@builder.io/qwik';
 import { Link, useLocation } from '@builder.io/qwik-city';
 import styles from './side-menu.module.css';
+import { type NavEntry, NAV_ENTRIES } from './nav-entries';
 
-export interface NavEntry {
-  readonly label: string;
-  readonly href: string;
-  readonly disabled?: boolean;
-}
-
-export const NAV_ENTRIES: ReadonlyArray<NavEntry> = [
-  { label: 'Inicio', href: '/' },
-  { label: 'Historia', href: '/historia' },
-  { label: 'Afinación', href: '/afinacion', disabled: true },
-  { label: 'Repertorio', href: '/repertorio', disabled: true },
-];
+// Re-export the data from the module so existing consumers keep working.
+export { NAV_ENTRIES };
+export type { NavEntry };
 
 interface SideMenuProps {
   /** Optional override for the entries shown — defaults to NAV_ENTRIES. */
