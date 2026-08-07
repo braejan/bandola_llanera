@@ -15,7 +15,9 @@ export const Landing = component$(() => {
         Origen, afinación y contexto orinoquense de un instrumento del joropo.
       </p>
       <p>
-        <Link href="/historia/">Comenzar →</Link>
+        <Link href="/historia/" class="cta">
+          Comenzar →
+        </Link>
       </p>
     </section>
   );

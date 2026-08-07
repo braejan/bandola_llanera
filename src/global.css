@@ -1,4 +1,8 @@
+/* =============================================================================
+ * Design tokens
+ * ============================================================================= */
 :root {
+  /* Brand & content colors */
   --color-bg: #fdf8f1;
   --color-fg: #1f1a14;
   --color-accent: #6b4423;
@@ -7,22 +11,33 @@
   --color-por-confirmar: #8b6f3f;
   --color-link: #6b4423;
   --color-link-hover: #3d2614;
+
+  /* Shell surfaces (paper-warm identity, layered) */
+  --color-header-bg: #faf3e6;
+  --color-sidebar-bg: #f7eedb;
+  --color-footer-bg: #f0e4cb;
+  --color-drawer-bg: #fdf8f1;
+  --color-active-bg: rgba(107, 68, 35, 0.12);
+  --color-hover-bg: rgba(107, 68, 35, 0.06);
   --color-callout-bg: rgba(139, 111, 63, 0.10);
   --color-progress-track: var(--color-rule);
   --color-progress-fill: var(--color-accent);
 
+  /* Typography */
   --font-serif: 'EB Garamond', Georgia, 'Times New Roman', serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 
-  --font-size-100: 0.85rem;
-  --font-size-200: 0.95rem;
+  --font-size-100: 0.8125rem;
+  --font-size-200: 0.9375rem;
   --font-size-300: 1rem;
   --font-size-400: 1.125rem;
   --font-size-500: 1.5rem;
-  --font-size-600: 2.2rem;
+  --font-size-600: 2.25rem;
+  --font-size-700: 3rem;
   --line-tight: 1.2;
   --line-base: 1.6;
 
+  /* Spacing scale (rem) */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 1rem;
@@ -31,7 +46,8 @@
   --space-6: 4rem;
 
   --measure: 38rem;
-  --radius: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
 
   --motion-fast: 120ms;
   --motion-base: 200ms;
@@ -44,6 +60,9 @@
   --focus-ring: var(--color-accent);
 }
 
+/* =============================================================================
+ * Reset
+ * ============================================================================= */
 *,
 *::before,
 *::after {
@@ -60,9 +79,10 @@ body {
   font-size: 18px;
   line-height: var(--line-base);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Global focus ring for every interactive element (REQ-M-008). */
+/* Global focus ring (REQ-M-008). */
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
@@ -90,7 +110,9 @@ a:hover {
   }
 }
 
-/* Self-hosted EB Garamond subset (REQ-M-005). */
+/* =============================================================================
+ * Self-hosted EB Garamond subset (REQ-M-005)
+ * ============================================================================= */
 @font-face {
   font-family: 'EB Garamond';
   src: url('/fonts/eb-garamond-subset.woff2') format('woff2');
@@ -100,22 +122,9 @@ a:hover {
   unicode-range: U+00A0-00FF, U+2010-2015, U+2018-201D, U+2022, U+2026;
 }
 
-/* Reading progress (REQ-M-006). */
-.progress {
-  position: sticky;
-  top: 0;
-  height: 4px;
-  width: 100%;
-  background: var(--color-progress-track);
-  z-index: 5;
-}
-.progress-fill {
-  height: 100%;
-  background: var(--color-progress-fill);
-  transition: width var(--motion-base) var(--easing-standard);
-}
-
-/* Skip link (REQ-M-001). */
+/* =============================================================================
+ * Skip link (REQ-M-001)
+ * ============================================================================= */
 .skip-link {
   position: absolute;
   left: var(--space-3);
@@ -135,73 +144,366 @@ a:hover {
   top: var(--space-3);
 }
 
-/* Site header + footer. */
+/* =============================================================================
+ * Site header (H1)
+ *
+ * Sticky on both mobile and desktop so the hamburger / brand is always
+ * reachable. Mobile includes the toggle inline; desktop hides it.
+ * ============================================================================= */
 .site-header {
-  font-family: var(--font-sans);
-  padding: var(--space-3) var(--space-5);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-header-bg);
   border-bottom: 1px solid var(--color-rule);
-  background: var(--color-bg);
-}
-.site-brand {
   font-family: var(--font-sans);
-  font-size: var(--font-size-400);
+}
+
+.site-brand {
+  grid-column: 1;
+  grid-row: 1;
+  font-family: var(--font-serif);
+  font-size: var(--font-size-600);
   color: var(--color-fg);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: var(--line-tight);
 }
+
 .site-brand:hover {
   color: var(--color-link-hover);
 }
 
-.site-footer {
-  font-family: var(--font-sans);
+.site-tagline {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 0;
   font-size: var(--font-size-200);
   color: var(--color-muted);
-  padding: var(--space-5);
-  border-top: 1px solid var(--color-rule);
-  text-align: center;
+  font-style: italic;
+  font-family: var(--font-serif);
+  max-width: 48ch;
 }
 
-/* Shell layout. */
-.shell {
-  display: flex;
-  min-height: calc(100vh - 8rem);
+/* =============================================================================
+ * Mobile navigation (N1)
+ *
+ * CSS-only hamburger via styled <details><summary>. No JS. Animates the icon
+ * when open.
+ * ============================================================================= */
+.mobile-nav {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
 }
-.shell-sidebar {
+
+.mobile-nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-200);
+  color: var(--color-fg);
+  list-style: none; /* remove default summary marker */
+  user-select: none;
+}
+
+.mobile-nav-toggle::-webkit-details-marker {
   display: none;
 }
-.shell-nav-details {
+.mobile-nav-toggle::marker {
+  content: '';
+}
+
+.mobile-nav-toggle:hover {
+  background: var(--color-hover-bg);
+  border-color: var(--color-accent);
+}
+
+.mobile-nav-toggle-label {
+  font-weight: 500;
+}
+
+.hamburger-icon {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 1.25rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.hamburger-icon span {
   display: block;
+  height: 2px;
   width: 100%;
-  border-bottom: 1px solid var(--color-rule);
+  background: var(--color-fg);
+  border-radius: 2px;
+  transform-origin: center;
+  transition:
+    transform var(--motion-base) var(--easing-standard),
+    opacity var(--motion-fast) var(--easing-standard);
 }
-.shell-nav-details summary {
-  font-family: var(--font-sans);
-  padding: var(--space-3) var(--space-5);
-  cursor: pointer;
-  font-size: var(--font-size-300);
-  color: var(--color-fg);
-  border-bottom: 1px solid var(--color-rule);
+
+/* Animate hamburger into an X when the drawer is open. */
+.mobile-nav[open] .hamburger-icon span:nth-child(1) {
+  transform: translateY(0.4rem) rotate(45deg);
 }
-.shell-main {
-  flex: 1;
-  padding: var(--space-5) var(--space-5);
-  max-width: calc(var(--measure) + var(--space-6));
-  scroll-margin-top: var(--space-5);
+.mobile-nav[open] .hamburger-icon span:nth-child(2) {
+  opacity: 0;
 }
+.mobile-nav[open] .hamburger-icon span:nth-child(3) {
+  transform: translateY(-0.4rem) rotate(-45deg);
+}
+
+.mobile-nav-drawer {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 16rem;
+  background: var(--color-drawer-bg);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  box-shadow: 0 8px 24px rgba(31, 26, 20, 0.08);
+}
+
+/* Hide mobile nav entirely on desktop. */
 @media (min-width: 1024px) {
-  .shell-nav-details {
+  .mobile-nav {
     display: none;
-  }
-  .shell-sidebar {
-    display: block;
-  }
-  .shell {
-    align-items: flex-start;
   }
 }
 
-/* Toc + Landing + Article. */
+/* =============================================================================
+ * Shell layout
+ * ============================================================================= */
+.shell {
+  display: block;
+  min-height: calc(100vh - 14rem);
+}
+
+.desktop-sidebar {
+  display: none;
+}
+
+.shell-main {
+  padding: var(--space-5) var(--space-5);
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    display: grid;
+    grid-template-columns: 16rem 1fr;
+    gap: var(--space-6);
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: var(--space-5) var(--space-5) var(--space-6);
+  }
+
+  .shell-main {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .desktop-sidebar {
+    display: block;
+    position: sticky;
+    top: 8rem;
+    align-self: start;
+    padding: var(--space-4);
+    background: var(--color-sidebar-bg);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-sans);
+  }
+}
+
+.sidebar-title {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-100);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin: 0 0 var(--space-3);
+  font-weight: 600;
+}
+
+/* =============================================================================
+ * Side nav (N1/N2) — used by both mobile drawer and desktop sidebar
+ * ============================================================================= */
+.side-nav {
+  font-family: var(--font-sans);
+}
+
+.side-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.side-nav-item {
+  display: block;
+}
+
+.side-nav-link {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  color: var(--color-fg);
+  text-decoration: none;
+  font-size: var(--font-size-300);
+  border-left: 3px solid transparent;
+  transition:
+    background var(--motion-fast) var(--easing-standard),
+    color var(--motion-fast) var(--easing-standard),
+    border-color var(--motion-fast) var(--easing-standard);
+}
+
+.side-nav-link:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-link-hover);
+}
+
+.side-nav-link-active {
+  background: var(--color-active-bg);
+  color: var(--color-accent);
+  font-weight: 600;
+  border-left-color: var(--color-accent);
+}
+
+.side-nav-link-active:hover {
+  background: var(--color-active-bg);
+  color: var(--color-accent);
+}
+
+.side-nav-link-disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+  border-left-color: transparent;
+}
+
+.side-nav-link-disabled:hover {
+  background: transparent;
+  color: var(--color-muted);
+}
+
+.side-nav-label {
+  display: inline-block;
+}
+
+/* =============================================================================
+ * Site footer (H2)
+ * ============================================================================= */
+.site-footer {
+  background: var(--color-footer-bg);
+  border-top: 1px solid var(--color-rule);
+  padding: var(--space-5) var(--space-5);
+  margin-top: var(--space-6);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-200);
+  color: var(--color-fg);
+}
+
+.footer-inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+.footer-brand-name {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: var(--font-size-500);
+  font-weight: 700;
+  color: var(--color-fg);
+  margin-bottom: var(--space-2);
+  letter-spacing: -0.01em;
+}
+
+.footer-brand-tagline {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: var(--line-base);
+  max-width: 36ch;
+}
+
+.footer-heading {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-100);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin: 0 0 var(--space-2);
+  font-weight: 600;
+}
+
+.footer-sources p {
+  margin: 0;
+  color: var(--color-fg);
+  line-height: var(--line-base);
+  max-width: 56ch;
+}
+
+.footer-year {
+  color: var(--color-muted);
+  border-top: 1px solid var(--color-rule);
+  padding-top: var(--space-4);
+  font-size: var(--font-size-100);
+}
+
+@media (min-width: 1024px) {
+  .footer-inner {
+    grid-template-columns: 2fr 2fr 1fr;
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .footer-year {
+    border-top: none;
+    padding-top: 0;
+    text-align: right;
+  }
+}
+
+/* =============================================================================
+ * Article reading affordances
+ * ============================================================================= */
+.reading-progress {
+  position: sticky;
+  top: 0;
+  height: 4px;
+  width: 100%;
+  background: var(--color-progress-track);
+  z-index: 5;
+}
+.reading-progress-fill {
+  height: 100%;
+  background: var(--color-progress-fill);
+  transition: width var(--motion-base) var(--easing-standard);
+}
+
 .toc {
   font-family: var(--font-sans);
   font-size: var(--font-size-200);
@@ -209,7 +511,7 @@ a:hover {
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius);
-  background: var(--color-bg);
+  background: var(--color-header-bg);
 }
 .toc ol {
   list-style: decimal;
@@ -228,33 +530,59 @@ a:hover {
   text-decoration: underline;
 }
 
+/* =============================================================================
+ * Landing
+ * ============================================================================= */
 .landing {
   font-family: var(--font-serif);
   padding: var(--space-5) 0;
 }
 .landing h1 {
-  font-size: var(--font-size-600);
+  font-size: var(--font-size-700);
   margin: 0 0 var(--space-3);
   line-height: var(--line-tight);
+  letter-spacing: -0.02em;
 }
 .landing p {
   font-size: var(--font-size-400);
   margin: 0 0 var(--space-3);
   color: var(--color-fg);
+  line-height: var(--line-base);
+}
+.landing .cta {
+  display: inline-block;
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  transition: background var(--motion-fast) var(--easing-standard);
+}
+.landing .cta:hover {
+  background: var(--color-link-hover);
+  color: var(--color-bg);
 }
 
+/* =============================================================================
+ * Article
+ * ============================================================================= */
 .article {
   font-family: var(--font-serif);
 }
 .article .header h1 {
-  font-size: var(--font-size-600);
+  font-size: var(--font-size-700);
   line-height: var(--line-tight);
   margin-bottom: var(--space-2);
+  letter-spacing: -0.02em;
 }
 .article .subtitle {
   font-style: italic;
   color: var(--color-muted);
   margin-top: 0;
+  font-size: var(--font-size-400);
 }
 .article .section {
   margin-top: var(--space-5);
@@ -270,7 +598,9 @@ a:hover {
   margin: var(--space-3) 0;
 }
 
-/* Callout (REQ-M-006 / INV-2): left-border accent + literal "Por confirmar" label. */
+/* =============================================================================
+ * Callout (REQ-M-006 / INV-2)
+ * ============================================================================= */
 .callout {
   margin-top: var(--space-3);
   padding: var(--space-3) var(--space-4);
@@ -284,14 +614,14 @@ a:hover {
   color: var(--color-por-confirmar);
 }
 
-/* Source link (REQ-M-006). */
+/* Source link */
 .source {
   font-size: var(--font-size-100);
   margin-top: var(--space-2);
   color: var(--color-muted);
 }
 
-/* Footnotes (REQ-M-006). */
+/* Footnotes */
 .footnotes-section {
   margin-top: var(--space-4);
   padding: var(--space-3) var(--space-4);
