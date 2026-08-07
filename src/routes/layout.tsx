@@ -1,6 +1,6 @@
 import { component$, Slot } from '@builder.io/qwik';
 import { SideMenu } from '~/components/side-menu/side-menu';
-import { SkipLink } from './skip-link';
+import { SkipLink } from './_components/skip-link';
 
 /**
  * Responsive semantic shell.
