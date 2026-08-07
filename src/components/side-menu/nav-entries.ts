@@ -10,6 +10,6 @@ export interface NavEntry {
 export const NAV_ENTRIES: ReadonlyArray<NavEntry> = [
   { label: 'Inicio', href: '/' },
   { label: 'Historia', href: '/historia' },
-  { label: 'Afinación', href: '/afinacion', disabled: true },
+  { label: 'Afinación', href: '/afinacion' },
   { label: 'Repertorio', href: '/repertorio', disabled: true },
 ];

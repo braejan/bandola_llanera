@@ -52,9 +52,9 @@ describe('SideMenu NAV_ENTRIES (R1)', () => {
     ]);
   });
 
-  it('Inicio is the only non-disabled entry besides Historia', () => {
+  it('Inicio, Historia, and Afinación are enabled; Repertorio is the only disabled', () => {
     const enabled = NAV_ENTRIES.filter((e) => !e.disabled);
-    expect(enabled.map((e) => e.label)).toEqual(['Inicio', 'Historia']);
+    expect(enabled.map((e) => e.label)).toEqual(['Inicio', 'Historia', 'Afinación']);
   });
 
   it('produces the expected testid values from NAV_ENTRIES', () => {
@@ -118,15 +118,20 @@ describe('SideMenu active state (R2)', () => {
     expect(historia?.getAttribute('aria-current')).toBe('page');
   });
 
-  it('pathname "/afinacion/" yields ZERO active entries (disabled)', async () => {
+  it('pathname "/afinacion/" activates Afinación only (enabled per REQ-M-007)', async () => {
     const doc = await renderSideMenuAt('/afinacion/');
     const active = doc.querySelectorAll('[aria-current="page"]');
-    expect(active).toHaveLength(0);
-    // Disabled entry is rendered as <span aria-disabled="true">, NOT <a>.
-    const afinacionSpan = navSpan(doc, 'Afinación');
-    expect(afinacionSpan).not.toBeNull();
-    expect(afinacionSpan?.getAttribute('aria-disabled')).toBe('true');
-    expect(navAnchor(doc, 'Afinación')).toBeNull();
+    expect(active).toHaveLength(1);
+    const afinacion = navAnchor(doc, 'Afinación');
+    expect(afinacion?.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('pathname "/afinacion" (no slash) ALSO activates Afinación (slash form)', async () => {
+    const doc = await renderSideMenuAt('/afinacion');
+    const active = doc.querySelectorAll('[aria-current="page"]');
+    expect(active).toHaveLength(1);
+    const afinacion = navAnchor(doc, 'Afinación');
+    expect(afinacion?.getAttribute('aria-current')).toBe('page');
   });
 
   it('pathname "/repertorio/" yields ZERO active entries (disabled)', async () => {
@@ -149,14 +154,15 @@ describe('SideMenu active state (R2)', () => {
 describe('SideMenu disabled rendering contract (R3)', () => {
   it('disabled entries render as <span aria-disabled="true">', async () => {
     const doc = await renderSideMenuAt('/');
-    const afinacionSpan = navSpan(doc, 'Afinación');
-    expect(afinacionSpan).not.toBeNull();
-    expect(afinacionSpan?.tagName).toBe('SPAN');
-    expect(afinacionSpan?.getAttribute('aria-disabled')).toBe('true');
-    expect(navAnchor(doc, 'Afinación')).toBeNull();
+    // Repertorio is the only disabled entry (per REQ-M-007 + INV-4 rewrite).
+    const repertorioSpan = navSpan(doc, 'Repertorio');
+    expect(repertorioSpan).not.toBeNull();
+    expect(repertorioSpan?.tagName).toBe('SPAN');
+    expect(repertorioSpan?.getAttribute('aria-disabled')).toBe('true');
+    expect(navAnchor(doc, 'Repertorio')).toBeNull();
   });
 
-  it('non-disabled entries render as <a> with the right href', async () => {
+  it('non-disabled entries (Inicio, Historia, Afinación) render as <a> with the right href', async () => {
     const doc = await renderSideMenuAt('/');
     const inicio = navAnchor(doc, 'Inicio');
     expect(inicio).not.toBeNull();
@@ -164,6 +170,9 @@ describe('SideMenu disabled rendering contract (R3)', () => {
     expect(inicio?.getAttribute('href')).toBe('/');
     const historia = navAnchor(doc, 'Historia');
     expect(historia?.getAttribute('href')).toBe('/historia');
+    const afinacion = navAnchor(doc, 'Afinación');
+    expect(afinacion?.getAttribute('href')).toBe('/afinacion');
+    expect(navSpan(doc, 'Afinación')).toBeNull();
   });
 });
 
