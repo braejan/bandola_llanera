@@ -82,8 +82,6 @@ function main() {
   let jsLazyMax = 0; // largest non-runtime chunk
   let jsLazyTotal = 0; // sum of all non-runtime chunks
   let jsRuntime = 0; // qwikloader/runtime
-  let cssTotal = 0;
-  let cssCount = 0;
   if (existsSync(BUILD)) {
     for (const name of readdirSync(BUILD)) {
       const p = join(BUILD, name);
@@ -96,10 +94,32 @@ function main() {
           jsLazyTotal += gz;
           if (gz > jsLazyMax) jsLazyMax = gz;
         }
-      } else if (name.endsWith('.css')) {
-        cssTotal += statSync(p).size;
-        cssCount += 1;
       }
+    }
+  }
+
+  // CSS: in Qwik 1.20, route-scoped CSS is inlined into the JS chunks via the
+  // `?inline` query, so dist/build/ has no .css files. Measure the actual CSS
+  // source files directly (src/global.css + any *.module.css in src/), gzipped.
+  let cssTotal = 0;
+  let cssCount = 0;
+  const cssPaths = [];
+  function walkCss(dir) {
+    if (!existsSync(dir)) return;
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name);
+      if (statSync(p).isDirectory()) {
+        walkCss(p);
+      } else if (name.endsWith('.css')) {
+        cssPaths.push(p);
+      }
+    }
+  }
+  walkCss(resolve(ROOT, 'src'));
+  for (const p of cssPaths) {
+    if (existsSync(p)) {
+      cssTotal += gzipSize(p);
+      cssCount += 1;
     }
   }
 
