@@ -11,6 +11,7 @@
     "build.client": "vite build",
     "build.preview": "vite build --ssr src/entry.preview.tsx",
     "build.types": "tsc --incremental --noEmit",
+    "check:size": "node scripts/check-build-size.mjs",
     "dev": "vite --mode ssr",
     "preview": "qwik build preview && vite preview",
     "fmt": "prettier --write .",
