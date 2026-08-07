@@ -2,6 +2,7 @@ import { component$, useStylesScoped$ } from '@builder.io/qwik';
 import { Link, useLocation } from '@builder.io/qwik-city';
 import styles from './side-menu.module.css?inline';
 import { type NavEntry, NAV_ENTRIES } from './nav-entries';
+import { isActivePath } from '~/routes/_lib/path';
 
 // Re-export the data from the module so existing consumers keep working.
 export { NAV_ENTRIES };
@@ -22,7 +23,7 @@ export const SideMenu = component$<SideMenuProps>((props) => {
     <nav class="nav" aria-label="Navegación principal">
       <ul class="list">
         {entries.map((entry) => {
-          const isActive = loc.url.pathname === entry.href;
+          const isActive = isActivePath(loc.url.pathname, entry.href);
           const className = [
             'link',
             isActive ? 'linkActive' : '',
