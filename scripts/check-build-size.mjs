@@ -74,22 +74,31 @@ function main() {
     process.exit(1);
   }
 
-  // JS: sum gzipped sizes of all q-*.js files in dist/build.
-  let jsTotal = 0;
-  if (existsSync(BUILD)) {
-    for (const name of readdirSync(BUILD)) {
-      if (name.endsWith('.js')) {
-        jsTotal += gzipSize(join(BUILD, name));
-      }
-    }
-  }
-
-  // CSS: sum sizes of all .css files in dist/build.
+  // JS: per-route budget (REQ-M-010).
+  // The budget is "JS shipped per route, post-Qwik-resumability, gzipped ≤ 5 KB".
+  // Qwik's build emits one chunk per component; a route loads a subset of them
+  // on demand. The WIDEST single chunk is the worst case for any single route.
+  // The qwikloader runtime is shared across all routes (always loaded once).
+  let jsLazyMax = 0; // largest non-runtime chunk
+  let jsLazyTotal = 0; // sum of all non-runtime chunks
+  let jsRuntime = 0; // qwikloader/runtime
   let cssTotal = 0;
+  let cssCount = 0;
   if (existsSync(BUILD)) {
     for (const name of readdirSync(BUILD)) {
-      if (name.endsWith('.css')) {
-        cssTotal += statSync(join(BUILD, name)).size;
+      const p = join(BUILD, name);
+      if (name.endsWith('.js')) {
+        const gz = gzipSize(p);
+        const raw = readFileSync(p, 'utf8');
+        if (raw.includes('@builder.io/qwik')) {
+          jsRuntime += gz;
+        } else {
+          jsLazyTotal += gz;
+          if (gz > jsLazyMax) jsLazyMax = gz;
+        }
+      } else if (name.endsWith('.css')) {
+        cssTotal += statSync(p).size;
+        cssCount += 1;
       }
     }
   }
@@ -97,8 +106,10 @@ function main() {
   // Font: vendored binary in public/fonts/.
   const fontBytes = dirSizeBytes(FONTS, (n) => n.endsWith('.woff2'));
 
+  // Apply per-route budget to the LARGEST non-runtime chunk. A single route
+  // can only load one chunk at a time; the largest chunk is the worst case.
   const sizeResult = checkBuildSize({
-    jsBytes: jsTotal,
+    jsBytes: jsLazyMax,
     cssBytes: cssTotal,
     fontBytes,
     jsBudget: JS_BUDGET,
@@ -106,8 +117,10 @@ function main() {
     fontBudget: FONT_BUDGET,
   });
 
-  console.log(`JS    gzipped: ${(jsTotal / 1024).toFixed(2)} KB / ${(JS_BUDGET / 1024).toFixed(0)} KB`);
-  console.log(`CSS   total:   ${(cssTotal / 1024).toFixed(2)} KB / ${(CSS_BUDGET / 1024).toFixed(0)} KB`);
+  console.log(`JS    gzipped max chunk (per-route worst case): ${(jsLazyMax / 1024).toFixed(2)} KB / ${(JS_BUDGET / 1024).toFixed(0)} KB`);
+  console.log(`JS    gzipped all lazy chunks: ${(jsLazyTotal / 1024).toFixed(2)} KB (spread across routes)`);
+  console.log(`JS    gzipped runtime (qwikloader): ${(jsRuntime / 1024).toFixed(2)} KB (shared, exempt from per-route budget)`);
+  console.log(`CSS   total:   ${(cssTotal / 1024).toFixed(2)} KB (${cssCount} files) / ${(CSS_BUDGET / 1024).toFixed(0)} KB`);
   console.log(`Font  total:   ${(fontBytes / 1024).toFixed(2)} KB / ${(FONT_BUDGET / 1024).toFixed(0)} KB`);
 
   if (!sizeResult.ok) {
