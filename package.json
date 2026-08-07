@@ -23,6 +23,7 @@
   "devDependencies": {
     "@builder.io/qwik": "^1.20.0",
     "@builder.io/qwik-city": "^1.20.0",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "20.19.0",
     "jsdom": "^25.0.0",
     "typescript": "5.4.5",
