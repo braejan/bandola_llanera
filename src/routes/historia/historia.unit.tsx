@@ -15,11 +15,11 @@ const EXPECTED_TITLES = [
 // Render the ArticleView + Toc + Progress stack for the historia article, then
 // parse the HTML with JSDOM. Returns the parsed document.
 async function renderHistoria(): Promise<Document> {
-  const { ArticleView, Toc } = await import('~/routes/_lib/article-view');
-  const { Toc: TocCmp } = await import('./toc');
+  const { ArticleView } = await import('~/routes/_lib/article-view');
+  const { Toc } = await import('../_components/toc');
   const result = await renderToString(
     <div>
-      <TocCmp sections={historiaArticle.sections} />
+      <Toc sections={historiaArticle.sections} />
       <ArticleView article={historiaArticle} />
     </div>,
     { containerTagName: 'div' },
@@ -136,8 +136,8 @@ describe('Historia article H4 (Maní y afinación)', () => {
 
   it('the Maní y afinación section cites the Bandola Wikipedia URL', async () => {
     const doc = await renderHistoria();
-    const sources = doc.querySelectorAll('a[data-testid="source"]');
-    const urls = Array.from(sources).map((s) => s.getAttribute('href'));
+    const sources = doc.querySelectorAll('[data-testid="source"]');
+    const urls = Array.from(sources).map((s) => s.querySelector('a')?.getAttribute('href') ?? '');
     expect(urls).toContain('https://es.wikipedia.org/wiki/Bandola_llanera');
   });
 });
@@ -184,10 +184,11 @@ describe('Historia article H6 (data shape)', () => {
 describe('Historia article H7-1 (Source links)', () => {
   it('every section has a source link with an https URL', async () => {
     const doc = await renderHistoria();
-    const sources = doc.querySelectorAll('a[data-testid="source"]');
+    const sources = doc.querySelectorAll('[data-testid="source"]');
     expect(sources).toHaveLength(6);
-    for (const a of sources) {
-      const href = a.getAttribute('href') ?? '';
+    for (const s of sources) {
+      const a = s.querySelector('a');
+      const href = a?.getAttribute('href') ?? '';
       expect(href).toMatch(/^https?:\/\//);
     }
   });
@@ -197,13 +198,14 @@ describe('Historia article H7-1 (Source links)', () => {
 describe('Historia article H7-2 (source allowlist)', () => {
   it('every section source is one of the two allowed Wikipedia URLs', async () => {
     const doc = await renderHistoria();
-    const sources = doc.querySelectorAll('a[data-testid="source"]');
+    const sources = doc.querySelectorAll('[data-testid="source"]');
     const allowed = new Set([
       'https://es.wikipedia.org/wiki/Bandola_llanera',
       'https://es.wikipedia.org/wiki/Joropo_llanero',
     ]);
-    for (const a of sources) {
-      const href = a.getAttribute('href') ?? '';
+    for (const s of sources) {
+      const a = s.querySelector('a');
+      const href = a?.getAttribute('href') ?? '';
       expect(allowed.has(href)).toBe(true);
     }
   });
