@@ -1,0 +1,9 @@
+.progress {
+  margin-top: var(--space-3);
+}
+.article {
+  margin-top: var(--space-3);
+}
+.callout {
+  margin-top: var(--space-0);
+}
