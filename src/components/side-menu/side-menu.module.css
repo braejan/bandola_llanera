@@ -7,6 +7,7 @@
   border-right: 1px solid var(--color-rule);
   font-family: var(--font-sans);
   font-size: 0.95rem;
+  z-index: 10;
 }
 
 .list {
@@ -60,4 +61,18 @@
 
 .label {
   display: inline-block;
+}
+
+/* Mobile: collapse the nav inside a <details> so it works without JS.
+   The layout shell wraps <SideMenu/> in <details><summary>Menú</summary>...</details>
+   on screens <1024px. Above 1024px, the shell renders <SideMenu/> as a sticky
+   14rem sidebar. REQ-M-001. */
+@media (max-width: 1023px) {
+  .nav {
+    position: static;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--color-rule);
+    padding: var(--space-3);
+  }
 }
