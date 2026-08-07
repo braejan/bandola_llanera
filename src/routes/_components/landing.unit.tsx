@@ -29,7 +29,7 @@ describe('shell: skip-link + landing + active state (REQ-M-001/002/003)', () => 
     const doc = await renderAt(
       '/',
       <>
-        <SkipLink />
+        <SkipLink targetId="main-content" />
         <main id="main-content" tabIndex={-1} />
       </>,
     );
