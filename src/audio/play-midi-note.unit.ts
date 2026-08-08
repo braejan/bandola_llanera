@@ -73,6 +73,55 @@ describe("playMidiNote — async + lifecycle", () => {
     expect(globalThis.__voices.length).toBeGreaterThanOrEqual(3);
   });
 
+  it("does not throw when the test-only globals are undefined (production runtime)", async () => {
+    // Production never loads test-setup.ts, so __voices and __audio are
+    // undefined. The audio module's writes to these globals must be
+    // guarded so a real user click does not blow up with
+    // "Cannot read properties of undefined (reading 'push')".
+    const originalVoices = globalThis.__voices;
+    const originalAudio = globalThis.__audio;
+    // @ts-expect-error — production runtime has no test globals
+    delete globalThis.__voices;
+    // @ts-expect-error — production runtime has no test globals
+    delete globalThis.__audio;
+    try {
+      const v1 = await playMidiNote(57);
+      const v2 = await playMidiNote(69);
+      expect(v1).not.toBeNull();
+      expect(v2).not.toBeNull();
+      // The same-target debounce would fire on the second 57; switch
+      // to a fresh target to keep both voices scheduled.
+      const v3 = await playMidiNote(57, { targetId: "A3-1" });
+      expect(v3).not.toBeNull();
+    } finally {
+      globalThis.__voices = originalVoices;
+      globalThis.__audio = originalAudio;
+    }
+  });
+
+  it("does not throw when the test-only globals are undefined and the AudioContext is missing", async () => {
+    // Production also takes the early-return path when AudioContext
+    // is unavailable; the rejected branch writes to __audio.rejects
+    // and must be guarded too.
+    const originalVoices = globalThis.__voices;
+    const originalAudio = globalThis.__audio;
+    const originalAudioContext = globalThis.AudioContext;
+    // @ts-expect-error — production runtime has no test globals
+    delete globalThis.__voices;
+    // @ts-expect-error — production runtime has no test globals
+    delete globalThis.__audio;
+    // @ts-expect-error — no AudioContext in the test environment
+    globalThis.AudioContext = undefined;
+    try {
+      const voice = await playMidiNote(57, { onStatus: () => undefined });
+      expect(voice).toBeNull();
+    } finally {
+      globalThis.__voices = originalVoices;
+      globalThis.__audio = originalAudio;
+      globalThis.AudioContext = originalAudioContext;
+    }
+  });
+
   it("produces the audible frequency chain for a given MIDI note", async () => {
     const ctx = getAudioContext()!;
     const capturedFreqs: number[] = [];

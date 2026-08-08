@@ -228,13 +228,17 @@ export async function playMidiNote(
 ): Promise<Voice | null> {
   if (!hasWindow() && !hasAudioContext()) {
     opts.onStatus?.(AUDIO_UNAVAILABLE_MESSAGE);
-    globalThis.__audio.rejects = new Error(AUDIO_UNAVAILABLE_MESSAGE);
+    if (globalThis.__audio) {
+      globalThis.__audio.rejects = new Error(AUDIO_UNAVAILABLE_MESSAGE);
+    }
     return null;
   }
   const ctx = getAudioContext();
   if (!ctx) {
     opts.onStatus?.(AUDIO_UNAVAILABLE_MESSAGE);
-    globalThis.__audio.rejects = new Error(AUDIO_UNAVAILABLE_MESSAGE);
+    if (globalThis.__audio) {
+      globalThis.__audio.rejects = new Error(AUDIO_UNAVAILABLE_MESSAGE);
+    }
     return null;
   }
 
@@ -255,7 +259,9 @@ export async function playMidiNote(
     try {
       await ctx.resume();
     } catch (err) {
-      globalThis.__audio.rejects = err as Error;
+      if (globalThis.__audio) {
+        globalThis.__audio.rejects = err as Error;
+      }
       opts.onStatus?.(AUDIO_UNAVAILABLE_MESSAGE);
       return null;
     }
@@ -263,7 +269,7 @@ export async function playMidiNote(
 
   const manager = sharedManager ?? new VoiceManager(ctx);
   const voice = manager.schedule(midi, opts);
-  if (voice) {
+  if (voice && globalThis.__voices) {
     globalThis.__voices.push(voice);
   }
   return voice;
