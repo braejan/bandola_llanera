@@ -1,7 +1,11 @@
 import { component$, useContext, useStylesScoped$, $ } from "@builder.io/qwik";
-import type { Mode } from "../scale-switcher/scale-switcher";
 import { playMidiNote } from "../../audio/play-midi-note";
 import { AudioStatusContext } from "../../audio/audio-status-context";
+import {
+  getScaleById,
+  isScaleInScale,
+  type ScaleId,
+} from "../../music/scales";
 
 /**
  * Diapason — the interactive fretboard of the bandola llanera.
@@ -24,12 +28,23 @@ import { AudioStatusContext } from "../../audio/audio-status-context";
  *     centered on the circle.
  *   - Non-scale notes are paper-knockout labels on the string (ink-tint
  *     text) so the string line does not cross the letter.
- *   - Tonic (open A on strings A3 and A4, at fret 0 / the nut) is
+ *   - Open strings (fret 0, at the nut) are identified by a hollow
+ *     digitation-red ring spanning the full string width. When the open
+ *     string produces a tone in the current scale, a small "abierta"
+ *     marker is shown as the "preferred" fingering indicator. The
+ *     fretted equivalent on a different string (e.g. A3 fret 5 = D4
+ *     open in Re mayor) shows a small "(=abierta)" label so the player
+ *     knows the open string is the alternative.
+ *   - Tonic (the open string that is also the root of the scale) is
  *     identified by position and the red circle — no extra cell marker.
- *   - No fingering numerals on the landing (removed per design).
  *
  * String order top to bottom: A3, D4, A4, E5 (conventional tablature
  * order, low to high).
+ *
+ * The Diapason no longer owns the mode/key selection — that lives in
+ * the ScaleSwitcher. The Diapason receives a `scaleId` (e.g.
+ * "re-mayor") and reads the scale's pitch classes from the music
+ * module.
  */
 
 interface StringNote {
@@ -41,14 +56,20 @@ interface StringNote {
 interface StringDef {
   open: string;
   midi: number;
+  pc: number;
   frets: StringNote[];
   rowClass: string;
 }
 
 // Render order top to bottom: A3 (top) → D4 → A4 → E5 (bottom).
 const STRINGS: StringDef[] = (() => {
+  // PC_NAMES is indexed by midi % 12, with the standard MIDI convention
+  // C = 0. So midi 60 (C4) → PC 0 → "C", midi 69 (A4) → PC 9 → "A",
+  // midi 59 → PC 11 → "B". The previous version had A at index 0 and
+  // C at index 3, which produced wrong note names (e.g. midi 59
+  // rendered as G♯ instead of B).
   const PC_NAMES = [
-    "A", "A♯", "B", "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯",
+    "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B",
   ];
   const opens: Array<{
     open: string;
@@ -63,10 +84,11 @@ const STRINGS: StringDef[] = (() => {
   return opens.map(({ open, midi, rowClass }) => ({
     open,
     midi,
+    pc: midi % 12,
     rowClass,
     frets: Array.from({ length: 8 }, (_, fret) => {
       const noteMidi = midi + fret;
-      const pc = (noteMidi - 57 + 1200) % 12;
+      const pc = noteMidi % 12;
       return { name: PC_NAMES[pc], midi: noteMidi, pc };
     }),
   }));
@@ -74,37 +96,29 @@ const STRINGS: StringDef[] = (() => {
 
 const TUNING_LABEL = "A3, D4, A4, E5";
 
-const MODES: Record<Mode, number[]> = {
-  mayor: [0, 2, 4, 5, 7, 9, 11],
-  menor: [0, 2, 3, 5, 7, 8, 10],
-  armonica: [0, 2, 3, 5, 7, 8, 11],
-};
-
-const MODE_LABEL: Record<Mode, string> = {
-  mayor: "Mayor",
-  menor: "Menor",
-  armonica: "Armónica",
-};
-
-const MODE_SCALE_NAMES: Record<Mode, string[]> = {
-  mayor: ["A", "B", "C♯", "D", "E", "F♯", "G♯"],
-  menor: ["A", "B", "C", "D", "E", "F", "G"],
-  armonica: ["A", "B", "C", "D", "E", "F", "G♯"],
-};
-
 const FRET_COLUMNS = [7, 6, 5, 4, 3, 2, 1, 0] as const;
 
 interface DiapasonProps {
-  mode: Mode;
+  scaleId: ScaleId;
 }
 
-export const Diapason = component$<DiapasonProps>(({ mode }) => {
+/**
+ * Returns the open-string label (e.g. "D4") that shares the same MIDI
+ * pitch as the given fretted note, or null if no open string matches.
+ * Used to render the "=abierta" alternative label on a fretted cell
+ * when the same pitch is also available as an open string.
+ */
+function findOpenStringAtPitch(midi: number): string | null {
+  for (const s of STRINGS) {
+    if (s.midi === midi) return s.open;
+  }
+  return null;
+}
+
+export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
   useStylesScoped$(STYLES);
 
-  const scale = MODES[mode];
-  const scaleNames = MODE_SCALE_NAMES[mode];
-  const activeScaleLabel = scaleNames.join(" – ");
-  const activeModeLabel = MODE_LABEL[mode];
+  const scale = getScaleById(scaleId);
 
   // The audio-status signal is provided by the ScaleSwitcher. We use
   // it to forward the audio module's onStatus callback (rejected
@@ -137,8 +151,8 @@ export const Diapason = component$<DiapasonProps>(({ mode }) => {
   return (
     <figure
       class="diapason"
-      aria-label={`Diapason de bandola llanera en escala ${activeModeLabel}: notas ${activeScaleLabel}. Afinación ${TUNING_LABEL}. Escala marcada con círculos rojos sobre las cuerdas.`}
-      data-mode={mode}
+      aria-label={`Diapason de bandola llanera en escala ${scale.label}. Afinación ${TUNING_LABEL}. Escala marcada con círculos rojos sobre las cuerdas.`}
+      data-scale={scaleId}
     >
       <div class="diapason-frame">
         <div class="diapason-board" role="presentation">
@@ -157,29 +171,47 @@ export const Diapason = component$<DiapasonProps>(({ mode }) => {
               */}
               <button
                 type="button"
-                class="diapason-headstock-cell fret fret--open"
+                class={[
+                  "diapason-headstock-cell fret fret--open",
+                  isScaleInScale(scale, s.pc) ? "fret--preferred" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 key={`open-${s.open}`}
                 data-midi={String(s.midi)}
                 data-string={s.open}
                 data-fret="0"
-                aria-label={`Cuerda abierta ${s.open}, MIDI ${s.midi}`}
+                data-preferred={isScaleInScale(scale, s.pc) ? "true" : "false"}
+                aria-label={`Cuerda abierta ${s.open}, MIDI ${s.midi}${
+                  isScaleInScale(scale, s.pc) ? ", nota de la escala" : ""
+                }`}
                 onClick$={handlePlay}
               >
                 <span class="headstock-label">{s.open}</span>
+                {isScaleInScale(scale, s.pc) && (
+                  <span class="open-marker" aria-hidden="true">
+                    abierta
+                  </span>
+                )}
               </button>
               {FRET_COLUMNS.map((fret) => {
                 const note = s.frets[fret];
-                const inScale = scale.includes(note.pc);
-                const isTonic =
-                  (s.open === "A3" || s.open === "A4") && fret === 0;
+                const inScale = isScaleInScale(scale, note.pc);
+                const openString = findOpenStringAtPitch(note.midi);
+                const hasOpenAlternative =
+                  inScale && openString !== null && fret !== 0;
                 const cls = [
                   "fret",
                   inScale ? "fret--in-scale" : "",
-                  isTonic ? "fret--tonic" : "",
+                  hasOpenAlternative ? "fret--has-open" : "",
                 ]
                   .filter(Boolean)
                   .join(" ");
-                const ariaLabel = `Nota ${note.name}, MIDI ${note.midi}, ${s.open}, traste ${fret}`;
+                const ariaLabel = `Nota ${note.name}, MIDI ${note.midi}, ${s.open}, traste ${fret}${
+                  hasOpenAlternative
+                    ? `, alternativa cuerda abierta ${openString}`
+                    : ""
+                }`;
                 return (
                   <button
                     type="button"
@@ -188,10 +220,16 @@ export const Diapason = component$<DiapasonProps>(({ mode }) => {
                     data-midi={String(note.midi)}
                     data-string={s.open}
                     data-fret={String(fret)}
+                    data-preferred={hasOpenAlternative ? "true" : "false"}
                     aria-label={ariaLabel}
                     onClick$={handlePlay}
                   >
                     <span class="fret-note">{note.name}</span>
+                    {hasOpenAlternative && (
+                      <span class="fret-alternative" aria-hidden="true">
+                        ({openString})
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -293,6 +331,7 @@ const STYLES = `
   .fret {
     position: relative;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     aspect-ratio: 1 / 0.65;
@@ -307,6 +346,7 @@ const STYLES = `
       border-color 320ms ease-out,
       color 320ms ease-out;
     min-width: 0;
+    gap: 1px;
   }
 
   /* Fret 0 (open string) — a hollow digitation-red ring spanning the
@@ -317,6 +357,22 @@ const STYLES = `
     background: transparent;
     height: var(--string-thickness, 2px);
     color: var(--color-ink);
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  /* When the open string is in the current scale, the ring becomes
+     the "preferred" fingering. We keep the hollow ring but add a
+     subtle background tint and a small "abierta" text label. */
+  .fret--preferred {
+    background: rgba(192, 57, 43, 0.08);
+  }
+  .open-marker {
+    font-size: 0.45rem;
+    color: var(--color-digitation);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
   }
 
   /* Trastes — the 7 vertical metal fret bars, drawn as right borders on
@@ -371,6 +427,19 @@ const STYLES = `
 
   .fret--in-scale .fret-note {
     color: var(--color-paper);
+  }
+
+  /* When a fretted note has the same pitch as an open string that's
+     also in the scale, show a small "(=D4)" label below the note name.
+     The visual cue nudges the player to prefer the open string. */
+  .fret-alternative {
+    position: relative;
+    z-index: 4;
+    font-size: 0.5rem;
+    color: var(--color-ink-tint);
+    background: var(--color-paper);
+    padding: 0 2px;
+    font-weight: 500;
   }
 
   /* Tonic: identified by position (fret 0, the open string at the nut)
@@ -454,6 +523,9 @@ const STYLES = `
     }
     .diapason-string::after {
       right: 28px;
+    }
+    .fret-alternative {
+      font-size: 0.45rem;
     }
   }
 `;
