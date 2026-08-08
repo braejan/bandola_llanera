@@ -20,11 +20,12 @@
  *     preferred
  */
 import { component$, useContextProvider, useSignal } from "@builder.io/qwik";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDOM } from "@builder.io/qwik/testing";
 import { Diapason } from "./diapason";
 import { AudioStatusContext } from "../../audio/audio-status-context";
 import { DEFAULT_SCALE_ID, type ScaleId } from "../../music/scales";
+import * as animTarget from "../../audio/anim-target";
 
 /**
  * Test harness — wraps the Diapason with the AudioStatusContext
@@ -394,5 +395,213 @@ describe("Diapason — open string preference (Refactor)", () => {
     // reflects "has open-string alternative at the same exact pitch".
     expect(a4F5!.getAttribute("data-preferred")).toBe("false");
     expect(a4F5!.querySelector(".fret-alternative")).toBeFalsy();
+  });
+});
+
+describe("Diapason — anim-target subscription (T-5, risk callout R2)", () => {
+  beforeEach(() => {
+    animTarget.__resetAnimTargetForTests();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    animTarget.__resetAnimTargetForTests();
+  });
+
+  it("subscribes to anim-target on mount and flashes the matching open-string cell for a tuning-* event", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+
+    animTarget.publish({ midi: 57, targetId: "tuning-A3" });
+
+    const openA3 = screen.querySelector(
+      '.diapason-headstock-cell[data-string="A3"][data-fret="0"]',
+    );
+    expect(openA3).not.toBeNull();
+    expect(openA3!.classList.contains("fret--playing")).toBe(true);
+  });
+
+  it("flashes the matching cell by MIDI for a scale-* event, preferring the open-string cell", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+
+    // MIDI 62 = D4 open AND A3 fret 5 AND D4's own regular fret-0 cell.
+    // The subscription must prefer the true open-string (headstock) cell.
+    animTarget.publish({ midi: 62, targetId: "scale-re-mayor-2" });
+
+    const openD4 = screen.querySelector(
+      '.diapason-headstock-cell[data-string="D4"][data-fret="0"]',
+    ) as HTMLElement;
+    expect(openD4).not.toBeNull();
+    expect(openD4.classList.contains("fret--playing")).toBe(true);
+
+    const a3Fret5 = screen.querySelector(
+      'button[data-string="A3"][data-fret="5"]',
+    ) as HTMLElement;
+    expect(a3Fret5.classList.contains("fret--playing")).toBe(false);
+
+    const d4RegularFret0 = screen.querySelector(
+      'button[data-string="D4"][data-fret="0"]:not(.diapason-headstock-cell)',
+    ) as HTMLElement;
+    expect(d4RegularFret0).not.toBeNull();
+    expect(d4RegularFret0.classList.contains("fret--playing")).toBe(false);
+  });
+
+  it("does not flash when prefers-reduced-motion is set (matchMedia mocked on the render window)", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+
+    const openA3 = screen.querySelector(
+      '.diapason-headstock-cell[data-string="A3"][data-fret="0"]',
+    ) as HTMLElement;
+    const view = openA3.ownerDocument.defaultView as unknown as {
+      matchMedia: (query: string) => { matches: boolean };
+    };
+    view.matchMedia = () => ({ matches: true });
+
+    animTarget.publish({ midi: 57, targetId: "tuning-A3" });
+
+    expect(openA3.classList.contains("fret--playing")).toBe(false);
+  });
+
+  it("unsubscribes when the captured cleanup fn runs — no listener leak across remounts (R2)", async () => {
+    const subscribeSpy = vi.spyOn(animTarget, "subscribe");
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+
+    expect(subscribeSpy).toHaveBeenCalledTimes(1);
+    const off = subscribeSpy.mock.results[0]?.value as (() => void) | undefined;
+    expect(typeof off).toBe("function");
+
+    const openA3 = screen.querySelector(
+      '.diapason-headstock-cell[data-string="A3"][data-fret="0"]',
+    ) as HTMLElement;
+
+    // Simulate Qwik's cleanup(off) firing on component teardown.
+    off!();
+
+    animTarget.publish({ midi: 57, targetId: "tuning-A3" });
+    expect(openA3.classList.contains("fret--playing")).toBe(false);
+  });
+});
+
+describe("Diapason — click animation (T-6)", () => {
+  // Fake timers are deliberately NOT used for the "removed after
+  // 400ms" assertions below: flash()'s setTimeout is scheduled during
+  // a REAL-timer click dispatched through Qwik's own QRL resolution
+  // pipeline (userEvent). Switching to fake timers only AFTER that
+  // real timer is already scheduled cannot control it — fake timers
+  // only intercept timers scheduled after vi.useFakeTimers() runs. A
+  // short real-time wait is simpler and avoids any risk of interfering
+  // with Qwik's own async dispatch machinery.
+
+  it("click on an in-scale cell applies .fret--playing, then removes it after 400ms", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+
+    // A3 fret 2 = midi 59 = pc 11. Re mayor pitch classes: 1,2,4,6,7,9,11.
+    const cell = screen.querySelector(
+      'button[data-string="A3"][data-fret="2"]',
+    ) as HTMLElement;
+    expect(cell.classList.contains("fret--in-scale")).toBe(true);
+
+    await userEvent(cell, "click");
+    expect(cell.classList.contains("fret--playing")).toBe(true);
+    expect(cell.classList.contains("fret--ghost")).toBe(false);
+
+    await new Promise((r) => setTimeout(r, 410));
+    expect(cell.classList.contains("fret--playing")).toBe(false);
+  }, 2000);
+
+  it("click on a non-scale cell applies .fret--ghost, then removes it after 400ms", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+
+    // A3 fret 1 = midi 58 = pc 10. Not in Re mayor's pitch classes.
+    const cell = screen.querySelector(
+      'button[data-string="A3"][data-fret="1"]',
+    ) as HTMLElement;
+    expect(cell.classList.contains("fret--in-scale")).toBe(false);
+
+    await userEvent(cell, "click");
+    expect(cell.classList.contains("fret--ghost")).toBe(true);
+    expect(cell.classList.contains("fret--playing")).toBe(false);
+
+    await new Promise((r) => setTimeout(r, 410));
+    expect(cell.classList.contains("fret--ghost")).toBe(false);
+  }, 2000);
+
+  it("in-scale click never applies the ghost class (red circle stays scale-only)", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+    const cell = screen.querySelector(
+      'button[data-string="A3"][data-fret="2"]',
+    ) as HTMLElement;
+    await userEvent(cell, "click");
+    expect(cell.classList.contains("fret--in-scale")).toBe(true);
+    expect(cell.classList.contains("fret--ghost")).toBe(false);
+  });
+
+  it("clicking the open A3 headstock cell (in scale) applies .fret--playing", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+    const openA3 = screen.querySelector(
+      '.diapason-headstock-cell[data-string="A3"][data-fret="0"]',
+    ) as HTMLElement;
+    await userEvent(openA3, "click");
+    expect(openA3.classList.contains("fret--playing")).toBe(true);
+  });
+
+  it("does not flash on click when prefers-reduced-motion is set", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+    const cell = screen.querySelector(
+      'button[data-string="A3"][data-fret="1"]',
+    ) as HTMLElement;
+    const view = cell.ownerDocument.defaultView as unknown as {
+      matchMedia: (query: string) => { matches: boolean };
+    };
+    view.matchMedia = () => ({ matches: true });
+
+    await userEvent(cell, "click");
+    expect(cell.classList.contains("fret--ghost")).toBe(false);
+    expect(cell.classList.contains("fret--playing")).toBe(false);
+  });
+});
+
+describe("Diapason — gray ghost digitation element (T-7)", () => {
+  it("renders exactly 36 fret__ghost spans (one per fret cell), all aria-hidden", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+    const buttons = Array.from(screen.querySelectorAll("button"));
+    expect(buttons.length).toBe(36);
+    const ghosts = Array.from(screen.querySelectorAll(".fret__ghost"));
+    expect(ghosts.length).toBe(36);
+    for (const ghost of ghosts) {
+      expect(ghost.getAttribute("aria-hidden")).toBe("true");
+    }
+  });
+
+  it("every fret cell contains its own fret__ghost span", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+    const buttons = Array.from(screen.querySelectorAll("button"));
+    for (const btn of buttons) {
+      const ghost = btn.querySelector(".fret__ghost");
+      expect(ghost).toBeTruthy();
+    }
+  });
+
+  it("the ghost span is present regardless of scale membership (always rendered, opacity governed by CSS)", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+    const inScaleCell = screen.querySelector(
+      'button[data-string="A3"][data-fret="2"]',
+    ) as HTMLElement;
+    const nonScaleCell = screen.querySelector(
+      'button[data-string="A3"][data-fret="1"]',
+    ) as HTMLElement;
+    expect(inScaleCell.querySelector(".fret__ghost")).toBeTruthy();
+    expect(nonScaleCell.querySelector(".fret__ghost")).toBeTruthy();
   });
 });

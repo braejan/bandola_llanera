@@ -1,6 +1,14 @@
-import { component$, useContext, useStylesScoped$, $ } from "@builder.io/qwik";
+import {
+  component$,
+  useContext,
+  useStylesScoped$,
+  useSignal,
+  useTask$,
+  $,
+} from "@builder.io/qwik";
 import { playMidiNote } from "../../audio/play-midi-note";
 import { AudioStatusContext } from "../../audio/audio-status-context";
+import { subscribe, type AnimEvent } from "../../audio/anim-target";
 import {
   getScaleById,
   isScaleInScale,
@@ -115,6 +123,71 @@ function findOpenStringAtPitch(midi: number): string | null {
   return null;
 }
 
+/** Duration of the click/anim-target flash. Matches `--motion-click`. */
+const FLASH_MS = 400;
+
+/**
+ * Locate the fret cell a published `anim-target` event refers to,
+ * scoped to `root` (the Diapason's own board element — never a bare
+ * `document` global, so this works identically in tests, SSR, and the
+ * browser).
+ *
+ * - `tuning-${label}` events (e.g. "tuning-A3") target the open-string
+ *   headstock cell for that string.
+ * - `scale-*` events carry a `midi` that may match several cells
+ *   (an open string AND a fretted position on another string share
+ *   the same pitch). The open-string (headstock) cell is preferred —
+ *   it is the natural mapping a player expects for that pitch class.
+ */
+function locateAnimTargetCell(
+  root: Element,
+  event: AnimEvent,
+): HTMLElement | null {
+  if (event.targetId.startsWith("tuning-")) {
+    const label = event.targetId.slice("tuning-".length);
+    return root.querySelector<HTMLElement>(
+      `.diapason-headstock-cell[data-string="${label}"][data-fret="0"]`,
+    );
+  }
+  const candidates = Array.from(
+    root.querySelectorAll<HTMLElement>(`[data-midi="${event.midi}"]`),
+  );
+  if (candidates.length === 0) return null;
+  const openString = candidates.find((el) =>
+    el.classList.contains("diapason-headstock-cell"),
+  );
+  return openString ?? candidates[0];
+}
+
+/**
+ * Returns whether `el`'s own window reports `prefers-reduced-motion:
+ * reduce`. Derived from `el.ownerDocument.defaultView` (never a bare
+ * `window`/`document` global) so this is correct under SSR and in the
+ * Qwik test harness, where no global `window` exists.
+ */
+function prefersReducedMotion(el: HTMLElement): boolean {
+  const view = el.ownerDocument?.defaultView as
+    | (Window & typeof globalThis)
+    | undefined;
+  return Boolean(
+    view?.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+  );
+}
+
+/**
+ * Flash `el` with a `fret--playing` or `fret--ghost` class for
+ * `FLASH_MS`, then remove it. No-ops under reduced motion — the audio
+ * still plays, only the animation is skipped (REQ-click-feedback-4).
+ */
+function flash(el: HTMLElement, kind: "playing" | "ghost"): void {
+  if (prefersReducedMotion(el)) return;
+  const cls = `fret--${kind}`;
+  el.classList.add(cls);
+  setTimeout(() => {
+    el.classList.remove(cls);
+  }, FLASH_MS);
+}
+
 export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
   useStylesScoped$(STYLES);
 
@@ -126,6 +199,28 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
   // frame (WARNING-4).
   const audioStatus = useContext(AudioStatusContext);
 
+  // Scopes anim-target cell lookups to this Diapason's own board —
+  // populated once the board renders; read lazily inside the
+  // subscription listener, which only ever fires after render.
+  const boardRef = useSignal<HTMLElement>();
+
+  // Subscribe to anim-target once on mount so external sequences
+  // (playTuningCheck, playScaleSequence) can flash the matching cell.
+  // useTask$ (not useVisibleTask$) runs on both server and client to
+  // keep state predictable across SSR resumption — see DESIGN.md
+  // "Qwik lifecycle wiring". `cleanup(off)` guarantees the listener is
+  // removed on unmount so remounts never accumulate subscribers
+  // (REQ-anim-target-3, risk callout R2).
+  useTask$(({ cleanup }) => {
+    const off = subscribe((event: AnimEvent) => {
+      const root = boardRef.value;
+      if (!root) return;
+      const el = locateAnimTargetCell(root, event);
+      if (el) flash(el, "playing");
+    });
+    cleanup(off);
+  });
+
   /**
    * Play the note for the clicked fret/open cell. The `data-midi`,
    * `data-string`, and `data-fret` attributes encode the target. We
@@ -135,10 +230,19 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
    * running (spec scenario S3.5).
    */
   const handlePlay = $(async (_event: Event, el: HTMLElement) => {
-    const midi = Number(el.dataset.midi);
-    const stringId = el.dataset.string ?? "";
-    const fret = el.dataset.fret ?? "";
+    // Reads via getAttribute, not `el.dataset` — the domino-based DOM
+    // used by @builder.io/qwik/testing does not implement `dataset`,
+    // so this keeps the handler testable there while remaining
+    // equivalent in real browsers.
+    const midi = Number(el.getAttribute("data-midi"));
+    const stringId = el.getAttribute("data-string") ?? "";
+    const fret = el.getAttribute("data-fret") ?? "";
     if (Number.isFinite(midi)) {
+      // Flash BEFORE awaiting playMidiNote so the click feels instant
+      // even before audio schedules. In-scale cells pulse "playing"
+      // (the red circle stays visible); non-scale cells show the gray
+      // ghost ring — red stays scale-only (REQ-click-feedback-1..3).
+      flash(el, isScaleInScale(scale, midi % 12) ? "playing" : "ghost");
       await playMidiNote(midi, {
         targetId: `${stringId}-${fret}`,
         onStatus: (msg) => {
@@ -155,7 +259,7 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
       data-scale={scaleId}
     >
       <div class="diapason-frame">
-        <div class="diapason-board" role="presentation">
+        <div class="diapason-board" role="presentation" ref={boardRef}>
           {STRINGS.map((s) => (
             <div
               class={`diapason-string ${s.rowClass}`}
@@ -193,6 +297,7 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
                     abierta
                   </span>
                 )}
+                <span class="fret__ghost" aria-hidden="true" />
               </button>
               {FRET_COLUMNS.map((fret) => {
                 const note = s.frets[fret];
@@ -230,6 +335,7 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
                         ({openString})
                       </span>
                     )}
+                    <span class="fret__ghost" aria-hidden="true" />
                   </button>
                 );
               })}
@@ -485,6 +591,51 @@ const STYLES = `
     color: var(--color-paper);
   }
 
+  /* Click/anim-target flash — .fret--playing pulses the whole cell
+     for ~400ms (--motion-click) whenever a click OR an external
+     anim-target event (playTuningCheck, playScaleSequence) plays this
+     cell's note. Works identically on in-scale and open-string cells;
+     the red digitation circle (.fret--in-scale::before) stays
+     untouched underneath, so it never competes with the pulse. */
+  .fret--playing {
+    animation: fret-pulse var(--motion-click) var(--ease-printed);
+  }
+
+  /* .fret--ghost marks a non-scale cell as clicked. The visible ring
+     lives on the .fret__ghost child span via the
+     .fret--ghost .fret__ghost descendant rule below — kept as a
+     separate element so the ring never competes with the red
+     digitation circle, which stays scale-only (REQ-click-feedback-3).
+     The span is always present (opacity 0 at rest) and only animates
+     when its parent gets .fret--ghost. */
+  .fret__ghost {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 78%;
+    height: 78%;
+    max-width: 30px;
+    max-height: 30px;
+    transform: translate(-50%, -50%);
+    background: transparent;
+    border: 1.5px solid var(--color-ink-tint);
+    border-radius: 50%;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .fret--ghost .fret__ghost {
+    animation: fret-ghost-fade var(--motion-click) var(--ease-printed);
+  }
+
+  /* The note label dims to 60% opacity for the duration of the ghost
+     flash, echoing the ring without moving or resizing the text. */
+  .fret--ghost .fret-note {
+    transition: opacity var(--motion-click) var(--ease-printed);
+    opacity: 0.6;
+  }
+
   /* When a fretted note has the same pitch as an open string that's
      also in the scale, show a small "(=D4)" label below the note name.
      The visual cue nudges the player to prefer the open string. */
@@ -562,8 +713,13 @@ const STYLES = `
 
   @media (prefers-reduced-motion: reduce) {
     .fret,
-    .fret--in-scale::before {
+    .fret--in-scale::before,
+    .fret--ghost .fret-note {
       transition: none;
+    }
+    .fret--playing,
+    .fret--ghost .fret__ghost {
+      animation: none;
     }
   }
 

@@ -57,7 +57,6 @@ export function publish(event: AnimEvent): void {
     try {
       listener(event);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("anim-target listener threw", err);
     }
   }
