@@ -54,27 +54,34 @@ export const head: DocumentHead = {
 
 const STYLES = `
   .poster {
-    /* The poster is the page. One screen, top to bottom, no scroll. */
-    height: 100vh;
+    /* The poster is the page. At least one screen tall, but allows
+       scrolling when the content (header, bandola, scale switcher,
+       scale reference, diapason, CTA, heritage) is taller than the
+       viewport. The original "no scroll past the fold" principle
+       from DESIGN.md holds for the LANDING; the new scale system
+       + 12-tone key selector + scale reference made the content
+       exceed one viewport on smaller screens. Scrolling is the
+       honest fix. */
+    min-height: 100vh;
     width: 100%;
     display: flex;
     justify-content: center;
     background: var(--color-ground);
     color: var(--color-paper);
     padding: clamp(var(--space-2), 1vw, var(--space-3));
-    overflow: hidden;
     box-sizing: border-box;
   }
 
   .poster-inner {
     width: 100%;
     max-width: 960px;
-    height: 100%;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: clamp(var(--space-2), 1.2vw, var(--space-3));
+    padding-bottom: var(--space-4);
   }
 
   .poster-header {
