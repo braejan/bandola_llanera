@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-08T13:43:17Z",
+  "title": "Design System: Bandola Llanera",
+  "extensions": {
+    "colorMeta": {
+      "ground": {
+        "role": "primary",
+        "displayName": "Terracotta Ground",
+        "canonical": "#b7410e",
+        "tonalRamp": [
+          "#3a1404",
+          "#5a1f06",
+          "#7a2a08",
+          "#9a340a",
+          "#b7410e",
+          "#cc6235",
+          "#dc8359",
+          "#e8a585"
+        ]
+      },
+      "accent": {
+        "role": "secondary",
+        "displayName": "Warm Marigold",
+        "canonical": "#e8a33d",
+        "tonalRamp": [
+          "#3d2a08",
+          "#5e3f0d",
+          "#825512",
+          "#a86e18",
+          "#cc8a20",
+          "#e8a33d",
+          "#efb863",
+          "#f4cd8a"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Near-Black Ink",
+        "canonical": "#1a1410",
+        "tonalRamp": [
+          "#0a0807",
+          "#1a1410",
+          "#2b211a",
+          "#3d2f25",
+          "#4a3d34",
+          "#655549",
+          "#857566",
+          "#a89887"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Off-White Paper",
+        "canonical": "#f5ebd8",
+        "tonalRamp": [
+          "#7a6c4f",
+          "#a08a64",
+          "#c0a87b",
+          "#d8c194",
+          "#e8d3ac",
+          "#efe1c6",
+          "#f5ebd8",
+          "#fbf3e5"
+        ]
+      },
+      "digitation": {
+        "role": "functional",
+        "displayName": "Digitation Red",
+        "canonical": "#c0392b",
+        "tonalRamp": [
+          "#3d0f08",
+          "#5e1810",
+          "#822419",
+          "#a63022",
+          "#c0392b",
+          "#cc5a4f",
+          "#dc7b71",
+          "#e89a92"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display (Wood-Type)",
+        "purpose": "Headline only. One per surface. Carries the poster voice."
+      },
+      "body": {
+        "displayName": "Body (Workhorse)",
+        "purpose": "Body copy, heritage lines, lede paragraphs. Max measure ~56ch."
+      },
+      "mode": {
+        "displayName": "Mode (Wood-Type)",
+        "purpose": "The three scale words (Mayor / Menor / Armónica). The active word renders in the ground color."
+      },
+      "cta": {
+        "displayName": "CTA (Wood-Type)",
+        "purpose": "The primary action. Same display face as the headline, on paper with an ink border."
+      },
+      "label": {
+        "displayName": "Label (Workhorse Caps)",
+        "purpose": "Captions, audio toggle, fret numbers. Uppercase with wide tracking, the way a printed caption sits beneath an image."
+      },
+      "note": {
+        "displayName": "Note (Workhorse Bold)",
+        "purpose": "Fret note labels on the diapason. The only typographic element that uses Unicode accidentals (♯)."
+      },
+      "heritage": {
+        "displayName": "Heritage (Workhorse Quiet)",
+        "purpose": "The one-line heritage copy beneath the CTA. The quietest text on the page."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-out-printed",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Default easing for state transitions. Subtle, not bouncy — the page is printed, not springy."
+      },
+      {
+        "name": "fretboard-update",
+        "value": "320ms ease-out on background-color, border-color, color",
+        "purpose": "The diapason's single coordinated transition when the mode changes."
+      },
+      {
+        "name": "ink-rule-reveal",
+        "value": "280ms ease-out on transform: scaleX(0) → scaleX(1)",
+        "purpose": "The faint ink rule that scales in from the left under a hovered/focused mode word."
+      },
+      {
+        "name": "cta-hover",
+        "value": "200ms ease-out on background-color, color",
+        "purpose": "The CTA's paper → marigold transition on hover/focus."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.001ms (all transitions and animations)",
+        "purpose": "Honors prefers-reduced-motion: reduce. Belt-and-suspenders at both global and component scope."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "CTA Primary",
+      "kind": "button",
+      "refersTo": "cta-primary",
+      "description": "The poster's primary action. Paper block with ink border, wood-type voice.",
+      "html": "<a class=\"ds-cta\" href=\"/camino\">Empezar el camino</a>",
+      "css": ".ds-cta { display: inline-block; font-family: Rye, Alfa Slab One, Georgia, serif; font-size: clamp(1.25rem, 1.2vw + 0.5rem, 1.85rem); font-weight: 400; color: #b7410e; background: #f5ebd8; padding: 0.75rem 2rem; border: 2px solid #1a1410; letter-spacing: 0.02em; text-decoration: none; transition: background-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), color 200ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-cta:hover, .ds-cta:focus-visible { background: #e8a33d; color: #1a1410; }"
+    },
+    {
+      "name": "Audio Toggle",
+      "kind": "button",
+      "refersTo": "audio-toggle",
+      "description": "Labeled placeholder for a future real audio sample. No fabricated recording.",
+      "html": "<button class=\"ds-audio\" type=\"button\" aria-label=\"Reproducir audio de muestra (placeholder)\" aria-pressed=\"false\"><span class=\"ds-audio-dot\"></span><span class=\"ds-audio-label\">Audio de muestra (placeholder)</span></button>",
+      "css": ".ds-audio { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border: 1px solid #1a1410; color: #1a1410; background: #f5ebd8; font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.04em; cursor: pointer; transition: background-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), color 200ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-audio:hover, .ds-audio:focus-visible { background: #1a1410; color: #f5ebd8; } .ds-audio[aria-pressed=\"true\"] { background: #1a1410; color: #f5ebd8; } .ds-audio-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }"
+    },
+    {
+      "name": "Scale Mode Button — Active",
+      "kind": "button",
+      "refersTo": "mode-button-active",
+      "description": "The active scale word. Renders in the ground color (terracotta) on the paper controls frame.",
+      "html": "<button class=\"ds-mode ds-mode--active\" type=\"button\" role=\"radio\" aria-checked=\"true\" aria-pressed=\"true\"><span>Mayor</span></button>",
+      "css": ".ds-mode { font-family: Rye, Alfa Slab One, Georgia, serif; font-size: clamp(1.5rem, 1.6vw + 0.7rem, 2.25rem); font-weight: 400; color: #1a1410; background: transparent; border: none; letter-spacing: 0.02em; padding: 0.25rem 0.5rem; cursor: pointer; position: relative; transition: color 320ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-mode::after { content: ''; position: absolute; left: 0.5rem; right: 0.5rem; bottom: 0.25rem; height: 2px; background: #1a1410; transform: scaleX(1); transform-origin: left center; } .ds-mode--active, .ds-mode--active:hover { color: #b7410e; } .ds-mode--active::after { background: #b7410e; }"
+    },
+    {
+      "name": "Scale Mode Button — Inactive",
+      "kind": "button",
+      "refersTo": "mode-button",
+      "description": "The inactive scale word. Renders in ink; the faint ink rule scales in on hover/focus.",
+      "html": "<button class=\"ds-mode\" type=\"button\" role=\"radio\" aria-checked=\"false\" aria-pressed=\"false\"><span>Menor</span></button>",
+      "css": ".ds-mode { font-family: Rye, Alfa Slab One, Georgia, serif; font-size: clamp(1.5rem, 1.6vw + 0.7rem, 2.25rem); font-weight: 400; color: #1a1410; background: transparent; border: none; letter-spacing: 0.02em; padding: 0.25rem 0.5rem; cursor: pointer; position: relative; } .ds-mode::after { content: ''; position: absolute; left: 0.5rem; right: 0.5rem; bottom: 0.25rem; height: 2px; background: #1a1410; transform: scaleX(0); transform-origin: left center; transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-mode:hover::after, .ds-mode:focus-visible::after { transform: scaleX(1); }"
+    },
+    {
+      "name": "Diapason Fret — In Scale",
+      "kind": "custom",
+      "refersTo": "diapason-fret-in-scale",
+      "description": "A single fret cell showing a scale note. Marigold fill, ink text and border. Representative of the full fretboard's highlight.",
+      "html": "<div class=\"ds-fret ds-fret--in-scale\"><span class=\"ds-fret-note\">C♯</span></div>",
+      "css": ".ds-fret { display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 0.65; border: 1px solid transparent; color: #4a3d34; background: transparent; font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-weight: 600; } .ds-fret-note { font-size: 0.875rem; line-height: 1; } .ds-fret--in-scale { background: #e8a33d; color: #1a1410; border-color: #1a1410; }"
+    },
+    {
+      "name": "Diapason Fret — Tonic",
+      "kind": "custom",
+      "refersTo": "diapason-fret-tonic",
+      "description": "The tonic cell (open A on string 1). Solid ink, paper text, marigold dot in the bottom-left corner.",
+      "html": "<div class=\"ds-fret ds-fret--tonic\"><span class=\"ds-fret-note\">A</span></div>",
+      "css": ".ds-fret { display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 0.65; border: 1px solid transparent; color: #4a3d34; background: transparent; font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-weight: 600; position: relative; } .ds-fret-note { font-size: 0.875rem; line-height: 1; } .ds-fret--tonic { background: #1a1410; color: #f5ebd8; border-color: #1a1410; } .ds-fret--tonic::after { content: ''; position: absolute; width: 5px; height: 5px; background: #e8a33d; border-radius: 50%; inset: auto auto 3px 3px; }"
+    },
+    {
+      "name": "Printed Frame",
+      "kind": "custom",
+      "refersTo": "printed-frame",
+      "description": "The 2px ink border that marks a paper field as a printed frame, not a UI card. The system's only depth device.",
+      "html": "<div class=\"ds-frame\"><div class=\"ds-frame-inner\">Contenido del marco impreso.</div></div>",
+      "css": ".ds-frame { border: 2px solid #1a1410; padding: 6px; background: #f5ebd8; box-sizing: border-box; } .ds-frame-inner { font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-size: 0.875rem; color: #1a1410; padding: 0.5rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Festival del Joropo Cartell",
+    "overview": "A llanero festival poster is not a UI; it is a printed field that owns the wall it hangs on. This system carries that grammar onto the web: every surface is a committed graphic artifact, not a collection of cards. The landing is a single poster — one viewport, top to bottom, no nav, no footer, no second scroll. The visitor does not browse; they arrive, see the bandola, touch the diapason, and follow the printed path to the next step.\n\nThe palette is saturated folk-modern, not muted editorial: a deep terracotta ground, a warm marigold accent, a near-black silhouette, and an off-white paper. Wood-type display carries the voice; a workhorse sans carries the body. The bandola is hand-rendered as a flat woodcut, not a photograph. The diapason is a real fretboard with the canonical A3–D4–A4–E5 tuning and the real mayor, menor, and armónica scale notes — the differentiator is the instrument itself, demonstrated on the first viewport, not described in a feature card.",
+    "keyCharacteristics": [
+      "A poster is a page, not a hero. One viewport, one composition, no scroll past the fold.",
+      "The bandola is a woodcut silhouette, not a stock photo. Authored as inline SVG, not imported.",
+      "The diapason is the proof. It is interactive on the first viewport, with switchable scales.",
+      "The scale switcher is typography, not a control. Three wood-type words, the active one in the dominant ground.",
+      "The audio is a labeled placeholder. No fabricated recordings until real audio exists.",
+      "Spanish throughout. No English copy on any surface."
+    ],
+    "rules": [
+      { "name": "The Four Poster Colors + Functional Digitation", "body": "The four poster colors (terracotta, marigold, ink, paper) carry the surface. Digitation red is a functional fifth color, used only for the digitation markers (scale circles on the strings, fingering numerals) inside the diapason. It never decorates a surface, never replaces a poster color, and never appears outside the diapason's scale/fingering context.", "section": "colors" },
+      { "name": "The Active-Ink Rule", "body": "The active scale word renders in the ground color (terracotta), not in a new color. The active state is the page speaking, not a control changing.", "section": "colors" },
+      { "name": "The Wood-Type Voice Rule", "body": "Rye (or Alfa Slab One as a fallback) is the display face. No system display faces (Impact, Arial Black, platform sans) as the display voice — they read as system, not as a poster.", "section": "typography" },
+      { "name": "The Body Stays Workhorse Rule", "body": "IBM Plex Sans (or any humanist workhorse) carries the body, labels, and notes. The display does not bleed into the body. Rye is for the headline, the mode words, and the CTA — never for body copy.", "section": "typography" },
+      { "name": "The Flat-Printed Rule", "body": "Surfaces are flat at rest. The 2px ink border is structural, not decorative. If a future surface needs to convey hierarchy, it does so with the ink-on-paper relationship, not with a shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do treat every surface as a printed field. One viewport, one composition, no scroll past the fold.",
+      "Do use the four-color palette exactly. Terracotta ground, marigold accent, ink silhouette, paper interactive field.",
+      "Do author illustrations as flat woodcut inline SVG. No photographs, no gradients, no stock geometry.",
+      "Do use Rye for the display voice (headline, mode words, CTA) and IBM Plex Sans for everything else.",
+      "Do keep the diapason musically correct. A3–D4–G4–B4 tuning, real mayor/menor/armónica scale notes, no simplifications.",
+      "Do label the audio as a placeholder. An empty <audio data-placeholder=\"true\"> is correct until a real recording exists.",
+      "Do use the 2px ink border as the only depth device. No shadows."
+    ],
+    "donts": [
+      "Don't add a nav bar, footer, or second viewport. The poster is the page.",
+      "Don't introduce a fifth color. The four-color palette is the system.",
+      "Don't use a system display face (Impact, Arial Black, platform sans) as the display voice.",
+      "Don't use a soft shadow, gradient, or glow on any surface. The world is flat and printed.",
+      "Don't fabricate photographs, audio, testimonials, customers, benchmarks, or pricing. Label placeholders clearly.",
+      "Don't add English copy. The product is Spanish.",
+      "Don't simplify the musical content. The tuning and the scale notes are the proof."
+    ]
+  }
+}
