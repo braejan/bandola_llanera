@@ -390,12 +390,12 @@ const STYLES = `
      is taller than the string thickness (24px min-height) so the
      headstock label ("A3", "D4", etc.) and the "abierta" marker
      fit cleanly inside without overflowing. The label and marker
-     stack vertically (column flex). The border is a subtle ink-tint
-     (not digitation red — the red is reserved for the in-scale
-     digitation circles on the left, per the user's request to
-     remove the red borders). */
+     stack vertically (column flex). NO border: the previous 1px
+     ink-tint border still read as a frame around the open-string
+     label, so the user asked for it gone. The "abierta" marker
+     alone identifies the cell as the open string. */
   .fret--open {
-    border: 1px solid var(--color-ink-tint);
+    border: none;
     background: transparent;
     height: auto;
     min-height: 24px;
@@ -409,8 +409,8 @@ const STYLES = `
   }
 
   /* When the open string is in the current scale, the cell gets a
-     subtle background tint to mark it as the "preferred" fingering
-     (without using the digitation red). */
+     very subtle background tint to mark it as the "preferred"
+     fingering. No border, no red — just a barely-there wash. */
   .fret--preferred {
     background: rgba(26, 20, 16, 0.04);
   }
