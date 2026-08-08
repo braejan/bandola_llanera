@@ -5,10 +5,9 @@
  * top CTA, the retired bottom CTA, and the ScaleSwitcher's #diapason
  * anchor target are all asserted against the real page tree.
  *
- * T-11 (this file, first pass): top CTA "Toca tu primera cuerda",
- * bottom CTA retirement, meta description update, #diapason anchor.
- * T-13 (WU-6, follow-up): extends this file with the mounted
- * <Footer /> assertions once the footer component lands.
+ * T-11: top CTA "Toca tu primera cuerda", bottom CTA retirement, meta
+ * description update, #diapason anchor.
+ * T-13: the mounted <Footer /> renders below <main>, not inside it.
  */
 import { describe, expect, it } from "vitest";
 import { createDOM } from "@builder.io/qwik/testing";
@@ -106,5 +105,40 @@ describe("Landing route — top CTA (T-11)", () => {
       (m) => "name" in m && m.name === "description",
     );
     expect(descriptionMetas.length).toBe(1);
+  });
+});
+
+describe("Landing route — Footer mount (T-13)", () => {
+  it('renders <footer class="broadsheet-footer" role="contentinfo"> AFTER <main class="poster">, not inside it', async () => {
+    const { screen, render } = await createDOM();
+    await render(
+      <QwikCityMockProvider>
+        <Index />
+      </QwikCityMockProvider>,
+    );
+    const main = screen.querySelector("main.poster");
+    const footer = screen.querySelector("footer.broadsheet-footer");
+    expect(main).toBeTruthy();
+    expect(footer).toBeTruthy();
+    expect(footer!.getAttribute("role")).toBe("contentinfo");
+    // The footer must NOT be a descendant of <main> — it sits below
+    // the poster as its own printed colophon, not inside it.
+    expect(main!.contains(footer!)).toBe(false);
+    // And it must come AFTER <main> in document order.
+    const position = main!.compareDocumentPosition(footer!);
+    expect(position & 4).toBeTruthy();
+  });
+
+  it("shows the footer credit text at the page root", async () => {
+    const { screen, render } = await createDOM();
+    await render(
+      <QwikCityMockProvider>
+        <Index />
+      </QwikCityMockProvider>,
+    );
+    const text = screen.textContent ?? "";
+    expect(text).toContain(
+      "Hecho por Braejan de Witsaba con amor — para estudiantes de bandola llanera",
+    );
   });
 });

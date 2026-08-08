@@ -3,39 +3,45 @@ import { Link, type DocumentHead } from "@builder.io/qwik-city";
 
 import { Bandola } from "../components/bandola/bandola";
 import { ScaleSwitcher } from "../components/scale-switcher/scale-switcher";
+import { Footer } from "../components/footer/footer";
 
 export default component$(() => {
   useStylesScoped$(STYLES);
 
   return (
-    <main class="poster" aria-label="Cartel de la Bandola Llanera">
-      <article class="poster-inner">
-        <header class="poster-header">
-          <h1 class="headline font-display">La Bandola Llanera</h1>
-        </header>
+    <>
+      <main class="poster" aria-label="Cartel de la Bandola Llanera">
+        <article class="poster-inner">
+          <header class="poster-header">
+            <h1 class="headline font-display">La Bandola Llanera</h1>
+          </header>
 
-        <figure class="bandola-wrap" aria-hidden="false">
-          <Bandola />
-          <figcaption class="bandola-caption">
-            Cuatro cuerdas. Afinación A3 – D4 – A4 – E5.
-          </figcaption>
-        </figure>
+          <figure class="bandola-wrap" aria-hidden="false">
+            <Bandola />
+            <figcaption class="bandola-caption">
+              Cuatro cuerdas. Afinación A3 – D4 – A4 – E5.
+            </figcaption>
+          </figure>
 
-        <Link
-          href="#diapason"
-          class="cta cta--top font-display"
-          data-testid="cta-top"
-        >
-          Toca tu primera cuerda
-        </Link>
+          <Link
+            href="#diapason"
+            class="cta cta--top font-display"
+            data-testid="cta-top"
+          >
+            Toca tu primera cuerda
+          </Link>
 
-        <ScaleSwitcher />
+          <ScaleSwitcher />
 
-        <p class="heritage">
-          La bandola, instrumento del folclore llanero de Colombia y Venezuela.
-        </p>
-      </article>
-    </main>
+          <p class="heritage">
+            La bandola, instrumento del folclore llanero de Colombia y
+            Venezuela.
+          </p>
+        </article>
+      </main>
+
+      <Footer />
+    </>
   );
 });
 
