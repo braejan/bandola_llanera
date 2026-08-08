@@ -138,7 +138,7 @@ describe("Landing route — Footer mount (T-13)", () => {
     );
     const text = screen.textContent ?? "";
     expect(text).toContain(
-      "Hecho por Braejan de Witsaba con amor — para estudiantes de bandola llanera",
+      "Creado por braejan desde los llanos de Casanare 🇨🇴 con 💛💙❤️ para estudiantes de la bandola llanera",
     );
   });
 });

@@ -20,12 +20,30 @@ export interface PlayScaleSequenceOpts {
 }
 
 /**
- * Base MIDI note for pitch class 0 (C4 / Do4). Every pitch class in
- * `scale.pitchClasses` (0..11) is added to this to get the absolute
- * MIDI note played. See `src/music/scales.ts` for the canonical
- * pitch-class mapping per key/mode.
+ * Lowest open-string MIDI note on the bandola llanera (A3 — see
+ * `STRINGS` in `src/components/diapason/diapason.tsx`). Every pitch
+ * class resolves to the lowest fretboard position that plays it,
+ * anchored here instead of a fixed absolute octave (e.g. C4).
+ *
+ * A fixed C4 anchor only ever lined up with a real open string for
+ * keys whose pitch classes happened to land on 57/62/69/76 by
+ * arithmetic coincidence (chiefly Re mayor, since its tonic pc (2)
+ * added to 60 lands exactly on D4's open MIDI, 62) — every other key
+ * resolved to arbitrary, sometimes octave-displaced frets, so the
+ * playback animation looked broken for anything but Re. Anchoring to
+ * the instrument's own lowest open string makes every key resolve
+ * onto a genuine low fret position the same way.
  */
-const BASE_MIDI = 60;
+const LOWEST_OPEN_MIDI = 57; // A3
+
+/**
+ * Resolves a pitch class (0..11) to the lowest MIDI note on the
+ * fretboard that plays it — within one octave above `LOWEST_OPEN_MIDI`.
+ */
+function resolveMidi(pc: number): number {
+  const offset = (pc - (LOWEST_OPEN_MIDI % 12) + 12) % 12;
+  return LOWEST_OPEN_MIDI + offset;
+}
 
 const SCALE_DELAY_MS = 500;
 
@@ -68,7 +86,7 @@ export async function playScaleSequence(
   const { signal } = opts;
   for (const pc of scale.pitchClasses) {
     if (signal?.aborted) return;
-    const midi = BASE_MIDI + pc;
+    const midi = resolveMidi(pc);
     const targetId = `scale-${scale.id}-${pc}`;
     publish({ midi, targetId });
     await playMidiNote(midi, { targetId });

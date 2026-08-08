@@ -20,7 +20,8 @@ export const Footer = component$(() => {
   return (
     <footer class="broadsheet-footer" role="contentinfo">
       <p class="footer__credit">
-        Hecho por Braejan de Witsaba con amor — para estudiantes de bandola
+        Creado por <code class="footer__handle">braejan</code> desde los
+        llanos de Casanare 🇨🇴 con 💛💙❤️ para estudiantes de la bandola
         llanera
       </p>
 
@@ -111,6 +112,11 @@ const STYLES = `
     color: var(--color-ink-on-paper);
     flex: 1 1 auto;
     min-width: 220px;
+  }
+
+  .footer__handle {
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.92em;
   }
 
   .footer__links {

@@ -61,7 +61,7 @@ describe("playScaleSequence — modes", () => {
     await p;
     expect(playMidiNoteMock).toHaveBeenCalledTimes(7);
     const midis = playMidiNoteMock.mock.calls.map((c) => c[0] as number);
-    expect(midis).toEqual([60, 62, 64, 65, 67, 69, 71]);
+    expect(midis).toEqual([60, 62, 64, 65, 67, 57, 59]);
   });
 
   it("plays Do menor: 7 notes at pitch classes 0,2,3,5,7,8,10", async () => {
@@ -71,7 +71,7 @@ describe("playScaleSequence — modes", () => {
     await drain(scale.pitchClasses.length);
     await p;
     const midis = playMidiNoteMock.mock.calls.map((c) => c[0] as number);
-    expect(midis).toEqual([60, 62, 63, 65, 67, 68, 70]);
+    expect(midis).toEqual([60, 62, 63, 65, 67, 68, 58]);
   });
 
   it("plays Do armónica: 7 notes at pitch classes 0,2,3,5,7,8,11", async () => {
@@ -81,10 +81,10 @@ describe("playScaleSequence — modes", () => {
     await drain(scale.pitchClasses.length);
     await p;
     const midis = playMidiNoteMock.mock.calls.map((c) => c[0] as number);
-    expect(midis).toEqual([60, 62, 63, 65, 67, 68, 71]);
+    expect(midis).toEqual([60, 62, 63, 65, 67, 68, 59]);
   });
 
-  it("plays Do cromática: all 12 chromatic notes in ascending pitch-class order", async () => {
+  it("plays Do cromática: all 12 chromatic notes, each the lowest fretboard occurrence of its pitch class", async () => {
     const scale = getScaleById("do-cromatica");
     expect(scale.pitchClasses).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     const p = playScaleSequence(scale);
@@ -92,7 +92,23 @@ describe("playScaleSequence — modes", () => {
     await p;
     expect(playMidiNoteMock).toHaveBeenCalledTimes(12);
     const midis = playMidiNoteMock.mock.calls.map((c) => c[0] as number);
-    expect(midis).toEqual([60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]);
+    expect(midis).toEqual([60, 61, 62, 63, 64, 65, 66, 67, 68, 57, 58, 59]);
+  });
+
+  it("resolves every pitch class to a MIDI note within the fretboard's lowest octave (A3..the octave above), so every key's sequence lands on real fret positions — not just Re's", async () => {
+    const scale = getScaleById("sol-mayor");
+    const p = playScaleSequence(scale);
+    await drain(scale.pitchClasses.length);
+    await p;
+    const midis = playMidiNoteMock.mock.calls.map((c) => c[0] as number);
+    for (const midi of midis) {
+      expect(midi).toBeGreaterThanOrEqual(57);
+      expect(midi).toBeLessThanOrEqual(68);
+    }
+    // Sol mayor's tonic (Sol, pc 7) resolves to MIDI 67 — a real,
+    // low fret position, not an octave dragged in from a fixed C4
+    // anchor unrelated to the instrument's own tuning.
+    expect(midis[0]).toBe(67);
   });
 });
 

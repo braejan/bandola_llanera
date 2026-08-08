@@ -1,5 +1,6 @@
 import {
   component$,
+  useComputed$,
   useContext,
   useStylesScoped$,
   useSignal,
@@ -191,7 +192,15 @@ function flash(el: HTMLElement, kind: "playing" | "ghost"): void {
 export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
   useStylesScoped$(STYLES);
 
-  const scale = getScaleById(scaleId);
+  // A signal, not a plain `const`, so `handlePlay` below reads the
+  // CURRENT scale on every click. A plain derived value closed over
+  // by a `$()` handler is captured once and goes stale across scale
+  // switches — clicks kept judging in-scale/out-of-scale membership
+  // against whatever scale was active when the QRL was first created,
+  // even though the rendered JSX (which reads `scale` directly, not
+  // through a QRL boundary) already reflected the new scale. Signals
+  // are the one thing Qwik guarantees stays live across that boundary.
+  const scale = useComputed$(() => getScaleById(scaleId));
 
   // The audio-status signal is provided by the ScaleSwitcher. We use
   // it to forward the audio module's onStatus callback (rejected
@@ -242,7 +251,7 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
       // even before audio schedules. In-scale cells pulse "playing"
       // (the red circle stays visible); non-scale cells show the gray
       // ghost ring — red stays scale-only (REQ-click-feedback-1..3).
-      flash(el, isScaleInScale(scale, midi % 12) ? "playing" : "ghost");
+      flash(el, isScaleInScale(scale.value, midi % 12) ? "playing" : "ghost");
       await playMidiNote(midi, {
         targetId: `${stringId}-${fret}`,
         onStatus: (msg) => {
@@ -255,7 +264,7 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
   return (
     <figure
       class="diapason"
-      aria-label={`Diapason de bandola llanera en escala ${scale.label}. Afinación ${TUNING_LABEL}. Escala marcada con círculos rojos sobre las cuerdas.`}
+      aria-label={`Diapason de bandola llanera en escala ${scale.value.label}. Afinación ${TUNING_LABEL}. Escala marcada con círculos rojos sobre las cuerdas.`}
       data-scale={scaleId}
     >
       <div class="diapason-frame">
@@ -277,7 +286,7 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
                 type="button"
                 class={[
                   "diapason-headstock-cell fret fret--open",
-                  isScaleInScale(scale, s.pc) ? "fret--preferred" : "",
+                  isScaleInScale(scale.value, s.pc) ? "fret--preferred" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -285,14 +294,14 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
                 data-midi={String(s.midi)}
                 data-string={s.open}
                 data-fret="0"
-                data-preferred={isScaleInScale(scale, s.pc) ? "true" : "false"}
+                data-preferred={isScaleInScale(scale.value, s.pc) ? "true" : "false"}
                 aria-label={`Cuerda abierta ${s.open}, MIDI ${s.midi}${
-                  isScaleInScale(scale, s.pc) ? ", nota de la escala" : ""
+                  isScaleInScale(scale.value, s.pc) ? ", nota de la escala" : ""
                 }`}
                 onClick$={handlePlay}
               >
                 <span class="headstock-label">{s.open}</span>
-                {isScaleInScale(scale, s.pc) && (
+                {isScaleInScale(scale.value, s.pc) && (
                   <span class="open-marker" aria-hidden="true">
                     abierta
                   </span>
@@ -301,7 +310,7 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
               </button>
               {FRET_COLUMNS.map((fret) => {
                 const note = s.frets[fret];
-                const inScale = isScaleInScale(scale, note.pc);
+                const inScale = isScaleInScale(scale.value, note.pc);
                 const openString = findOpenStringAtPitch(note.midi);
                 const hasOpenAlternative =
                   inScale && openString !== null && fret !== 0;

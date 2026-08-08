@@ -21,7 +21,7 @@ import { createDOM } from "@builder.io/qwik/testing";
 import { Footer } from "./footer";
 
 const CREDIT_TEXT =
-  "Hecho por Braejan de Witsaba con amor — para estudiantes de bandola llanera";
+  "Creado por braejan desde los llanos de Casanare 🇨🇴 con 💛💙❤️ para estudiantes de la bandola llanera";
 const COPYRIGHT_TEXT = "© 2026 Witsaba";
 
 const EXPECTED_LINKS = {
@@ -47,6 +47,15 @@ describe("Footer — broadsheet colophon (T-12)", () => {
     const credit = screen.querySelector(".footer__credit");
     expect(credit).toBeTruthy();
     expect(credit!.textContent?.trim()).toBe(CREDIT_TEXT);
+  });
+
+  it("formats the `braejan` handle as inline code, markdown-style", async () => {
+    const { screen, render } = await createDOM();
+    await render(<Footer />);
+    const credit = screen.querySelector(".footer__credit");
+    const code = credit?.querySelector("code");
+    expect(code).toBeTruthy();
+    expect(code!.textContent?.trim()).toBe("braejan");
   });
 
   it("shows the exact copyright line", async () => {

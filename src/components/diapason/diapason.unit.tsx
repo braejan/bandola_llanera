@@ -605,3 +605,84 @@ describe("Diapason — gray ghost digitation element (T-7)", () => {
     expect(nonScaleCell.querySelector(".fret__ghost")).toBeTruthy();
   });
 });
+
+/**
+ * Reactive harness — unlike `TestHarness` (which fixes `scaleId` for
+ * the lifetime of the render), this owns a live `useSignal<ScaleId>`
+ * and a button that flips it, exactly mirroring how `ScaleSwitcher`
+ * drives `Diapason` in production (`<Diapason scaleId={scaleId.value} />`
+ * where `scaleId` is a signal owned by the parent). Only a render
+ * driven by an actual signal update — not a fresh mount with a
+ * different initial prop — can catch a stale-closure bug in a `$()`
+ * handler.
+ */
+const ReactiveHarness = component$(() => {
+  const scaleId = useSignal<ScaleId>("re-mayor");
+  const audioStatus = useSignal<string>("");
+  useContextProvider(AudioStatusContext, audioStatus);
+  return (
+    <>
+      <button
+        type="button"
+        class="switch-to-re-sharp"
+        onClick$={() => {
+          scaleId.value = "re#-mayor";
+        }}
+      >
+        switch
+      </button>
+      <Diapason scaleId={scaleId.value} />
+    </>
+  );
+});
+
+describe("Diapason — click flash reflects a live scale switch (bugfix)", () => {
+  beforeEach(() => {
+    animTarget.__resetAnimTargetForTests();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    animTarget.__resetAnimTargetForTests();
+  });
+
+  it("after switching from Re mayor to Re♯ mayor, clicking a fret that is in-scale for Re but NOT for Re♯ shows the ghost flash, not the playing flash", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<ReactiveHarness />);
+
+    await userEvent(".switch-to-re-sharp", "click");
+
+    // A3 fret 7 = MIDI 64, pitch class 4 (E). E IS one of Re mayor's
+    // pitch classes {2,4,6,7,9,11,1} but is NOT one of Re♯ mayor's
+    // {3,5,7,8,10,0,2} — so after the switch this cell must render
+    // (and flash) as out-of-scale.
+    const cell = screen.querySelector(
+      'button[data-string="A3"][data-fret="7"]',
+    ) as HTMLElement;
+    expect(cell.classList.contains("fret--in-scale")).toBe(false);
+
+    await userEvent(cell, "click");
+
+    expect(cell.classList.contains("fret--ghost")).toBe(true);
+    expect(cell.classList.contains("fret--playing")).toBe(false);
+  });
+
+  it("after switching from Re mayor to Re♯ mayor, clicking a fret that IS in-scale for Re♯ shows the playing flash", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<ReactiveHarness />);
+
+    await userEvent(".switch-to-re-sharp", "click");
+
+    // A3 fret 1 = MIDI 58, pitch class 10 (A♯) — in Re♯ mayor's
+    // pitch classes {3,5,7,8,10,0,2}, not in Re mayor's.
+    const cell = screen.querySelector(
+      'button[data-string="A3"][data-fret="1"]',
+    ) as HTMLElement;
+    expect(cell.classList.contains("fret--in-scale")).toBe(true);
+
+    await userEvent(cell, "click");
+
+    expect(cell.classList.contains("fret--playing")).toBe(true);
+    expect(cell.classList.contains("fret--ghost")).toBe(false);
+  });
+});
