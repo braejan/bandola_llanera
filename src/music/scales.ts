@@ -11,7 +11,19 @@
  *
  * Defaults: Re mayor (D major), the most common scale in joropo.
  */
-export type Key = "do" | "re" | "mi" | "fa" | "sol" | "la" | "si";
+export type Key =
+  | "do"
+  | "do#"
+  | "re"
+  | "re#"
+  | "mi"
+  | "fa"
+  | "fa#"
+  | "sol"
+  | "sol#"
+  | "la"
+  | "la#"
+  | "si";
 export type Mode = "mayor" | "menor" | "armonica" | "cromatica";
 export type ScaleId = `${Key}-${Mode}`;
 
@@ -25,13 +37,18 @@ export interface Scale {
   label: string;
 }
 
-const KEY_DATA: Record<Key, { pc: number; label: string }> = {
+export const KEY_DATA: Record<Key, { pc: number; label: string }> = {
   do: { pc: 0, label: "Do" },
+  "do#": { pc: 1, label: "Do♯" },
   re: { pc: 2, label: "Re" },
+  "re#": { pc: 3, label: "Re♯" },
   mi: { pc: 4, label: "Mi" },
   fa: { pc: 5, label: "Fa" },
+  "fa#": { pc: 6, label: "Fa♯" },
   sol: { pc: 7, label: "Sol" },
+  "sol#": { pc: 8, label: "Sol♯" },
   la: { pc: 9, label: "La" },
+  "la#": { pc: 10, label: "La♯" },
   si: { pc: 11, label: "Si" },
 };
 
@@ -55,7 +72,24 @@ const MODE_LABEL: Record<Mode, string> = {
   cromatica: "cromática",
 };
 
-const ALL_KEYS: Key[] = ["do", "re", "mi", "fa", "sol", "la", "si"];
+// All 12 keys in strict chromatic order — the same sequence the
+// student sees in the linear scale reference (Do, Do♯, Re, Re♯,
+// Mi, Fa, Fa♯, Sol, Sol♯, La, La♯, Si). The visual order in the
+// key selector matches the order the user reads.
+const ALL_KEYS: Key[] = [
+  "do",
+  "do#",
+  "re",
+  "re#",
+  "mi",
+  "fa",
+  "fa#",
+  "sol",
+  "sol#",
+  "la",
+  "la#",
+  "si",
+];
 const ALL_MODES: Mode[] = ["mayor", "menor", "armonica", "cromatica"];
 
 export const SCALES: Scale[] = ALL_KEYS.flatMap((key) =>

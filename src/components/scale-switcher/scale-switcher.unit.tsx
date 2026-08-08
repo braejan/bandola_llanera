@@ -91,15 +91,28 @@ describe("ScaleSwitcher — header placement and label", () => {
 });
 
 describe("ScaleSwitcher — key selector (Refactor)", () => {
-  it("renders 7 key buttons in the order Do, Re, Mi, Fa, Sol, La, Si", async () => {
+  it("renders 12 key buttons in chromatic order (Do, Do#, Re, Re#, Mi, Fa, Fa#, Sol, Sol#, La, La#, Si)", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
     const keys = Array.from(
       screen.querySelectorAll(".key-selector button[data-key]"),
     );
-    expect(keys.length).toBe(7);
+    expect(keys.length).toBe(12);
     const labels = keys.map((k) => k.textContent?.trim());
-    expect(labels).toEqual(["Do", "Re", "Mi", "Fa", "Sol", "La", "Si"]);
+    expect(labels).toEqual([
+      "Do",
+      "Do♯",
+      "Re",
+      "Re♯",
+      "Mi",
+      "Fa",
+      "Fa♯",
+      "Sol",
+      "Sol♯",
+      "La",
+      "La♯",
+      "Si",
+    ]);
   });
 
   it("Re is checked by default (the new default tonic)", async () => {
@@ -112,7 +125,19 @@ describe("ScaleSwitcher — key selector (Refactor)", () => {
   it("non-Re keys are unchecked by default", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
-    for (const key of ["do", "mi", "fa", "sol", "la", "si"]) {
+    for (const key of [
+      "do",
+      "do#",
+      "re#",
+      "mi",
+      "fa",
+      "fa#",
+      "sol",
+      "sol#",
+      "la",
+      "la#",
+      "si",
+    ]) {
       const btn = screen.querySelector(`button[data-key="${key}"]`);
       expect(btn?.getAttribute("aria-checked")).toBe("false");
     }
@@ -121,7 +146,20 @@ describe("ScaleSwitcher — key selector (Refactor)", () => {
   it("every key button carries role=\"radio\"", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
-    for (const key of ["do", "re", "mi", "fa", "sol", "la", "si"]) {
+    for (const key of [
+      "do",
+      "do#",
+      "re",
+      "re#",
+      "mi",
+      "fa",
+      "fa#",
+      "sol",
+      "sol#",
+      "la",
+      "la#",
+      "si",
+    ]) {
       const btn = screen.querySelector(`button[data-key="${key}"]`);
       expect(btn?.getAttribute("role")).toBe("radio");
     }
@@ -137,13 +175,41 @@ describe("ScaleSwitcher — key selector (Refactor)", () => {
   it("clicking a different key does not throw", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
-    for (const key of ["do", "re", "mi", "fa", "sol", "la", "si"]) {
+    for (const key of [
+      "do",
+      "do#",
+      "re",
+      "re#",
+      "mi",
+      "fa",
+      "fa#",
+      "sol",
+      "sol#",
+      "la",
+      "la#",
+      "si",
+    ]) {
       const btn = screen.querySelector(
         `button[data-key="${key}"]`,
       ) as HTMLButtonElement | null;
       expect(btn).not.toBeNull();
       expect(() => btn!.click()).not.toThrow();
     }
+  });
+
+  it("Re♯ mayor (D# major) is selectable — the button exists and the click does not throw", async () => {
+    const { screen, render } = await createDOM();
+    await render(<ScaleSwitcher />);
+    const reSharp = screen.querySelector(
+      'button[data-key="re#"]',
+    ) as HTMLButtonElement | null;
+    expect(reSharp).not.toBeNull();
+    expect(reSharp!.getAttribute("data-key")).toBe("re#");
+    expect(() => reSharp!.click()).not.toThrow();
+    // The signal update and re-render are Qwik's responsibility;
+    // verified manually in the browser. The vitest environment
+    // does not propagate QRL reactivity through microtasks the way
+    // a real runtime does.
   });
 });
 

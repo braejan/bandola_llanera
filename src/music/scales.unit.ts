@@ -7,6 +7,7 @@ import {
   ALL_KEYS_LIST,
   ALL_MODES_LIST,
   DEFAULT_SCALE_ID,
+  KEY_DATA,
   SCALES,
   getKeyLabel,
   getModeLabel,
@@ -17,8 +18,8 @@ import {
 } from "./scales";
 
 describe("scales — data structure", () => {
-  it("exposes 28 scales (7 keys × 4 modes including cromática)", () => {
-    expect(SCALES.length).toBe(28);
+  it("exposes 48 scales (12 keys × 4 modes including cromática)", () => {
+    expect(SCALES.length).toBe(48);
   });
 
   it("every scale has a unique id of the form `{key}-{mode}`", () => {
@@ -27,7 +28,7 @@ describe("scales — data structure", () => {
       expect(ids.has(scale.id)).toBe(false);
       ids.add(scale.id);
       expect(scale.id).toMatch(
-        /^(do|re|mi|fa|sol|la|si)-(mayor|menor|armonica|cromatica)$/,
+        /^(do|do#|re|re#|mi|fa|fa#|sol|sol#|la|la#|si)-(mayor|menor|armonica|cromatica)$/,
       );
     }
   });
@@ -94,11 +95,16 @@ describe("scales — pitch-class mapping", () => {
 describe("scales — key and mode lookups", () => {
   it("getKeyLabel returns the Spanish solfège name", () => {
     expect(getKeyLabel("do")).toBe("Do");
+    expect(getKeyLabel("do#")).toBe("Do♯");
     expect(getKeyLabel("re")).toBe("Re");
+    expect(getKeyLabel("re#")).toBe("Re♯");
     expect(getKeyLabel("mi")).toBe("Mi");
     expect(getKeyLabel("fa")).toBe("Fa");
+    expect(getKeyLabel("fa#")).toBe("Fa♯");
     expect(getKeyLabel("sol")).toBe("Sol");
+    expect(getKeyLabel("sol#")).toBe("Sol♯");
     expect(getKeyLabel("la")).toBe("La");
+    expect(getKeyLabel("la#")).toBe("La♯");
     expect(getKeyLabel("si")).toBe("Si");
   });
 
@@ -108,8 +114,47 @@ describe("scales — key and mode lookups", () => {
     expect(getModeLabel("armonica")).toBe("armónica");
   });
 
-  it("ALL_KEYS_LIST contains exactly the 7 naturals in pedagogical order", () => {
-    expect(ALL_KEYS_LIST).toEqual(["do", "re", "mi", "fa", "sol", "la", "si"]);
+  it("ALL_KEYS_LIST contains the 12 chromatic keys in chromatic order", () => {
+    expect(ALL_KEYS_LIST).toEqual([
+      "do",
+      "do#",
+      "re",
+      "re#",
+      "mi",
+      "fa",
+      "fa#",
+      "sol",
+      "sol#",
+      "la",
+      "la#",
+      "si",
+    ]);
+  });
+
+  it("every sharp key has a unique PC that doesn't collide with a natural", () => {
+    expect(KEY_DATA["do#"].pc).toBe(1);
+    expect(KEY_DATA["re#"].pc).toBe(3);
+    expect(KEY_DATA["fa#"].pc).toBe(6);
+    expect(KEY_DATA["sol#"].pc).toBe(8);
+    expect(KEY_DATA["la#"].pc).toBe(10);
+    // Sharps occupy the odd PCs (1, 3, 6, 8, 10) and the naturals
+    // occupy the rest (0, 2, 4, 5, 7, 9, 11).
+    const allPcs = new Set(Object.values(KEY_DATA).map((k) => k.pc));
+    expect(allPcs.size).toBe(12);
+  });
+
+  it("Re# mayor (D# major) maps to D#, E#=F, F#=Gb, G#, A#, B#=C, C##=D", () => {
+    // D# major intervals: 0, 2, 4, 5, 7, 9, 11. D# tonic PC = 3.
+    // 3+0=3, 3+2=5, 3+4=7, 3+5=8, 3+7=10, 3+9=0, 3+11=2.
+    const scale = getScaleById("re#-mayor");
+    expect(scale.pitchClasses).toEqual([3, 5, 7, 8, 10, 0, 2]);
+  });
+
+  it("Do# menor (C# minor) maps to C#, D#=Eb, E=F, F#=Gb, G#=Ab, A=B, B#=C", () => {
+    // C# minor intervals: 0, 2, 3, 5, 7, 8, 10. C# tonic PC = 1.
+    // 1+0=1, 1+2=3, 1+3=4, 1+5=6, 1+7=8, 1+8=9, 1+10=11.
+    const scale = getScaleById("do#-menor");
+    expect(scale.pitchClasses).toEqual([1, 3, 4, 6, 8, 9, 11]);
   });
 
   it("ALL_MODES_LIST contains exactly the 4 modes in pedagogical order", () => {
