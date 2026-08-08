@@ -21,21 +21,26 @@ import { createDOM } from "@builder.io/qwik/testing";
 import { ScaleSwitcher } from "./scale-switcher";
 
 describe("ScaleSwitcher — header placement and label", () => {
-  it("renders the key selector before the mode selector before the Diapason", async () => {
+  it("renders the key selector before the mode selector before the scale reference before the Diapason", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
     const keySelector = screen.querySelector('[role="radiogroup"][aria-label="Tónica"]');
     const modeSelector = screen.querySelector('[role="radiogroup"][aria-label="Modo"]');
+    const scaleRef = screen.querySelector(".scale-reference");
     const diapasonFig = screen.querySelector("figure.diapason");
     expect(keySelector).not.toBeNull();
     expect(modeSelector).not.toBeNull();
+    expect(scaleRef).not.toBeNull();
     expect(diapasonFig).not.toBeNull();
     // KeySelector before ModeSelector
     const cmp1 = keySelector!.compareDocumentPosition(modeSelector!);
     expect(cmp1 & 4).toBeTruthy();
-    // ModeSelector before Diapason
-    const cmp2 = modeSelector!.compareDocumentPosition(diapasonFig!);
+    // ModeSelector before ScaleReference
+    const cmp2 = modeSelector!.compareDocumentPosition(scaleRef!);
     expect(cmp2 & 4).toBeTruthy();
+    // ScaleReference before Diapason
+    const cmp3 = scaleRef!.compareDocumentPosition(diapasonFig!);
+    expect(cmp3 & 4).toBeTruthy();
   });
 
   it('shows the visible "sonido sintetizado (simulación)" label', async () => {
@@ -283,6 +288,15 @@ describe("ScaleSwitcher — responsive contract at ≤640px", () => {
     const label = screen.querySelector(".synthesis-label");
     expect(label).not.toBeNull();
     expect(label?.textContent).toContain("sonido sintetizado");
+  });
+
+  it("renders the linear scale reference between the controls and the Diapason", async () => {
+    const { screen, render } = await createDOM();
+    await render(<ScaleSwitcher />);
+    const ref = screen.querySelector(".scale-reference");
+    expect(ref).not.toBeNull();
+    const noteButtons = ref!.querySelectorAll("button[data-pc]");
+    expect(noteButtons.length).toBe(12);
   });
 
   it("does not embed a min-width that would force horizontal scroll on a 360px viewport", async () => {

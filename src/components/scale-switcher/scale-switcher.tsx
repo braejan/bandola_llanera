@@ -6,6 +6,7 @@ import {
   $,
 } from "@builder.io/qwik";
 import { Diapason } from "../diapason/diapason";
+import { ScaleReference } from "../scale-reference/scale-reference";
 import { AudioStatusContext } from "../../audio/audio-status-context";
 import {
   ALL_KEYS_LIST,
@@ -145,6 +146,8 @@ export const ScaleSwitcher = component$(() => {
           </p>
         </div>
       </div>
+
+      <ScaleReference scaleId={scaleId.value} />
 
       <Diapason scaleId={scaleId.value} />
     </section>
