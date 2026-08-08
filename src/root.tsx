@@ -10,9 +10,9 @@ THESIS: The landing is a poster — one committed graphic artifact that owns the
 
 OWN-WORLD: Saturated folk-modern palette (deep terracotta ground, warm marigold accent, near-black bandola silhouette). Wood-type display for the headline. Geometric printed frame around the diapason, not a UI card. Hand-rendered bandola as the hero. Scale switcher as a row of typographic modes — Mayor, Menor, Armónica — set in wood-type, the active one in the dominant ground.
 
-STORY: Visitor arrives, sees a poster, reads the headline, sees the bandola, sees the diapason, switches the scale (first interaction), feels the differentiator, clicks Empezar el camino, enters the guided path.
+STORY: Visitor arrives, sees a poster, reads the headline, sees the bandola, clicks Toca tu primera cuerda to jump straight to the diapason, switches the scale (first interaction), tries Verificar afinación or Tocar escala to hear the instrument play itself, feels the differentiator, scrolls to the broadsheet footer crediting Witsaba/braejan.
 
-FIRST VIEWPORT: Top to bottom — short wood-type headline; hand-rendered bandola as the hero; interactive diapason (4 strings labeled A3–D4–A4–E5); scale switcher (three wood-type words); primary action Empezar el camino; one-line heritage copy. No nav, no footer, no cards. The poster is the page.
+FIRST VIEWPORT: Top to bottom — short wood-type headline; hand-rendered bandola as the hero; primary action Toca tu primera cuerda; interactive diapason (4 strings labeled A3–D4–A4–E5); scale switcher (three wood-type words) with the Verificar afinación and Tocar escala action buttons and a manual-mode hint; one-line heritage copy. No nav, no card grid — a single broadsheet footer colophon closes the composition below the poster.
 
 FORM: Modern joropo festival poster / llanero identity program. Assigned direction (candidate 7). Seed key: bandola-llanera-landing. Mode: persuade.
 

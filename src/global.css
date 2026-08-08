@@ -42,6 +42,54 @@
   /* Frame — printed, not a card */
   --frame-border: 2px solid var(--color-ink);
   --frame-inset: 6px;
+
+  /* Motion — every new animation references these tokens, never a
+     hard-coded ms value in component CSS. See DESIGN.md § Motion. */
+  --motion-fast: 200ms;      /* hover/focus color swaps on buttons */
+  --motion-medium: 320ms;    /* existing scale-switcher ink rule + transitions */
+  --motion-click: 400ms;     /* .fret--playing pulse + .fret--ghost fade */
+  --motion-sequence: 500ms;  /* inter-note delay in playScaleSequence */
+  --motion-tuning: 700ms;    /* inter-string delay in playTuningCheck */
+  --ease-printed: ease-out;  /* every new transition */
+}
+
+/* ==========================================================================
+   Motion — keyframes
+   ========================================================================== */
+
+/* Click/anim-target pulse — the in-scale "playing" flash on the
+   Diapason (.fret--playing). Kept global (not inside Diapason's
+   useStylesScoped$ block) because CSS @keyframes are referenced by
+   name and are not auto-scoped the way selectors are; the consuming
+   .fret--playing rule lives in the Diapason's own scoped styles. */
+@keyframes fret-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Gray ghost digitation fade — the non-scale click flash
+  (.fret--ghost .fret__ghost). Consuming rule lives in the Diapason's
+  own scoped styles. */
+@keyframes fret-ghost-fade {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* ==========================================================================

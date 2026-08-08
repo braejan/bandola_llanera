@@ -3,11 +3,15 @@ import {
   useContextProvider,
   useSignal,
   useStylesScoped$,
+  noSerialize,
+  type NoSerialize,
   $,
 } from "@builder.io/qwik";
 import { Diapason } from "../diapason/diapason";
 import { ScaleReference } from "../scale-reference/scale-reference";
 import { AudioStatusContext } from "../../audio/audio-status-context";
+import { playTuningCheck } from "../../audio/play-tuning-check";
+import { playScaleSequence } from "../../audio/play-scale-sequence";
 import {
   ALL_KEYS_LIST,
   ALL_MODES_LIST,
@@ -72,10 +76,58 @@ export const ScaleSwitcher = component$(() => {
     scaleId.value = `${current.key}-${mode}` as ScaleId;
   });
 
+  // Verificar afinación / Tocar escala: each sequence owns its own
+  // AbortController so a re-click cancels the prior run mid-flight
+  // instead of overlapping it. Both buttons disable while EITHER
+  // sequence plays (REQ-tuning-check buttons, REQ-auto-scale buttons).
+  // AbortController instances are not serializable, so the signal
+  // must hold a `noSerialize()`-wrapped value — Qwik throws at
+  // runtime otherwise (a plain `useSignal<AbortController | null>()`
+  // fails the moment the signal is written).
+  const tuningAbort = useSignal<NoSerialize<AbortController>>(undefined);
+  const scaleAbort = useSignal<NoSerialize<AbortController>>(undefined);
+  const isPlayingTuning = useSignal(false);
+  const isPlayingScale = useSignal(false);
+
+  const onTuningClick$ = $(async () => {
+    tuningAbort.value?.abort();
+    const controller = new AbortController();
+    tuningAbort.value = noSerialize(controller);
+    isPlayingTuning.value = true;
+    try {
+      await playTuningCheck({ signal: controller.signal });
+    } finally {
+      // Only the run that is still "current" clears the flag — an
+      // aborted prior run's finally must not clobber a newer run's
+      // in-flight state.
+      if (tuningAbort.value === controller) {
+        isPlayingTuning.value = false;
+      }
+    }
+  });
+
+  const onScaleClick$ = $(async () => {
+    scaleAbort.value?.abort();
+    const controller = new AbortController();
+    scaleAbort.value = noSerialize(controller);
+    isPlayingScale.value = true;
+    try {
+      // Read fresh so a key/mode change made just before the click is
+      // honored, not a stale value captured at render time.
+      const scale = getScaleById(scaleId.value);
+      await playScaleSequence(scale, { signal: controller.signal });
+    } finally {
+      if (scaleAbort.value === controller) {
+        isPlayingScale.value = false;
+      }
+    }
+  });
+
   const currentScale = getScaleById(scaleId.value);
 
   return (
     <section
+      id="diapason"
       class="scale-switcher"
       aria-label="Selector de tónica, modo y estado de audio"
     >
@@ -135,6 +187,29 @@ export const ScaleSwitcher = component$(() => {
           <p class="current-scale" aria-label="Escala actual">
             Escala actual: {currentScale.label}
           </p>
+
+          <div class="sequence-controls">
+            <button
+              type="button"
+              class="btn-tuning"
+              disabled={isPlayingTuning.value || isPlayingScale.value}
+              aria-label="Reproducir secuencia de verificación de afinación"
+              onClick$={onTuningClick$}
+            >
+              Verificar afinación
+            </button>
+            <button
+              type="button"
+              class="btn-scale"
+              disabled={isPlayingTuning.value || isPlayingScale.value}
+              aria-label="Reproducir escala actual"
+              onClick$={onScaleClick$}
+            >
+              Tocar escala
+            </button>
+          </div>
+
+          <p class="mode-hint">Modo manual: toca el diapason</p>
 
           <p
             class="audio-status"
@@ -309,6 +384,63 @@ const STYLES = `
     text-align: center;
   }
 
+  /* Verificar afinación / Tocar escala — paper/ink 1px-border buttons,
+     reusing the label type scale (never the CTA/display scale). Hover
+     swaps to the accent color, matching the poster's single highlight
+     color; disabled dims to ink-tint with no hover transition. */
+  .sequence-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+  }
+
+  .btn-tuning,
+  .btn-scale {
+    font-family: var(--font-body);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-ink);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition:
+      background-color var(--motion-fast) var(--ease-printed),
+      color var(--motion-fast) var(--ease-printed);
+  }
+
+  .btn-tuning:hover:not(:disabled),
+  .btn-scale:hover:not(:disabled),
+  .btn-tuning:focus-visible:not(:disabled),
+  .btn-scale:focus-visible:not(:disabled) {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+
+  .btn-tuning:disabled,
+  .btn-scale:disabled {
+    color: var(--color-ink-tint);
+    cursor: not-allowed;
+    transition: none;
+  }
+
+  /* Manual-mode hint — always visible below the two sequence buttons;
+     names the default interaction (clicking the Diapason directly). */
+  .mode-hint {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-tint);
+    text-align: center;
+  }
+
   /* Spanish status node — driven by the audio module's reject callback.
      Empty when audio is available; "Audio no disponible. Toca una nota
      para intentarlo de nuevo." when the user gesture was rejected. */
@@ -357,7 +489,9 @@ const STYLES = `
     .key,
     .key::after,
     .mode,
-    .mode::after {
+    .mode::after,
+    .btn-tuning,
+    .btn-scale {
       transition: none;
     }
   }

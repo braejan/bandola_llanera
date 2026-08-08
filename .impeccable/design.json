@@ -140,7 +140,18 @@
     ],
     "breakpoints": [
       { "name": "sm", "value": "640px" }
-    ]
+    ],
+    "motionTokens": {
+      "ref": "DESIGN.md#motion",
+      "tokens": [
+        "--motion-fast",
+        "--motion-medium",
+        "--motion-click",
+        "--motion-sequence",
+        "--motion-tuning",
+        "--ease-printed"
+      ]
+    }
   },
   "components": [
     {
@@ -230,6 +241,46 @@
       "description": "The 2px ink border that marks a paper field as a printed frame, not a UI card. The system's only depth device.",
       "html": "<div class=\"ds-frame\"><div class=\"ds-frame-inner\">Contenido del marco impreso.</div></div>",
       "css": ".ds-frame { border: 2px solid #1a1410; padding: 6px; background: #f5ebd8; box-sizing: border-box; } .ds-frame-inner { font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-size: 0.875rem; color: #1a1410; padding: 0.5rem; }"
+    },
+    {
+      "name": "Footer",
+      "kind": "custom",
+      "refersTo": "footer",
+      "description": "Broadsheet colophon below the poster — a documented exception to the original no-footer rule (see DESIGN.md § Footer (broadsheet colophon)). Paper background, 2px solid ink border-top only, square corners, no shadow, no gradient. Credit line, 4 external links (witsaba.com, GitHub, LinkedIn, repo), copyright line. Desktop row layout; ≤640px column stack with the copyright centered.",
+      "html": "<footer class=\"broadsheet-footer\" role=\"contentinfo\"><p class=\"footer__credit\">Hecho por Braejan de Witsaba con amor — para estudiantes de bandola llanera</p><nav class=\"footer__links\" aria-label=\"Enlaces del proyecto\"><a href=\"https://witsaba.com\" target=\"_blank\" rel=\"noopener\">Witsaba</a></nav><p class=\"footer__copyright\">© 2026 Witsaba</p></footer>",
+      "css": ".broadsheet-footer { background: #f5ebd8; color: #1a1410; border-top: 2px solid #1a1410; border-radius: 0; box-shadow: none; padding: 1.5rem 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; } .footer__copyright { font-size: 0.8125rem; letter-spacing: 0.08em; text-transform: uppercase; color: #4a3d34; }"
+    },
+    {
+      "name": "Tuning-Check button",
+      "kind": "button",
+      "refersTo": "tuning-check",
+      "description": "\"Verificar afinación\" — paper/1px-ink-border action button inside the ScaleSwitcher controls frame. Clicking plucks A3 → D4 → A4 → E5 at 700ms via playMidiNote, pulsing the matching open-string headstock cell (.fret--playing). Disabled (ink-tint, cursor not-allowed) while any sequence plays; a second click aborts the in-flight run via AbortSignal — no orphan tail.",
+      "html": "<button type=\"button\" class=\"btn-tuning\" aria-label=\"Reproducir secuencia de verificación de afinación\">Verificar afinación</button>",
+      "css": ".btn-tuning { font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.5rem 1rem; border: 1px solid #1a1410; background: #f5ebd8; color: #1a1410; transition: background-color 200ms ease-out, color 200ms ease-out; } .btn-tuning:hover:not(:disabled) { background: #e8a33d; } .btn-tuning:disabled { color: #4a3d34; cursor: not-allowed; }"
+    },
+    {
+      "name": "Auto-Scale button",
+      "kind": "button",
+      "refersTo": "auto-scale",
+      "description": "\"Tocar escala\" — same paper/ink-border grammar as Tuning-Check. Clicking triggers playScaleSequence, iterating the active scale's pitchClasses at 500ms via playMidiNote (cromática plays all 12 semitones in ascending order). Reads the current scale fresh per click so a key/mode change just before the click is honored. Disabled while any sequence plays; a second click aborts the in-flight run.",
+      "html": "<button type=\"button\" class=\"btn-scale\" aria-label=\"Reproducir escala actual\">Tocar escala</button>",
+      "css": ".btn-scale { font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.5rem 1rem; border: 1px solid #1a1410; background: #f5ebd8; color: #1a1410; transition: background-color 200ms ease-out, color 200ms ease-out; } .btn-scale:hover:not(:disabled) { background: #e8a33d; } .btn-scale:disabled { color: #4a3d34; cursor: not-allowed; }"
+    },
+    {
+      "name": "Click Animation",
+      "kind": "custom",
+      "refersTo": "click-animation",
+      "description": "Every click on a diapason cell (fret or open string) — and every anim-target event published by playTuningCheck/playScaleSequence — pulses the cell with .fret--playing for ~400ms (--motion-click, scale 1 → 1.08 → 1). CSS-only keyframe (fret-pulse) triggered by a transient class the flash() helper adds and removes via setTimeout. Reduced-motion: the global rule collapses the keyframe to 0.001ms; flash() also short-circuits to a no-op when matchMedia reports reduced motion — the audio still plays.",
+      "html": "<button type=\"button\" class=\"fret fret--in-scale fret--playing\" data-midi=\"59\"><span class=\"fret-note\">B</span><span class=\"fret__ghost\" aria-hidden=\"true\"></span></button>",
+      "css": "@keyframes fret-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.85; } 100% { transform: scale(1); opacity: 1; } } .fret--playing { animation: fret-pulse 400ms ease-out; }"
+    },
+    {
+      "name": "Gray Ghost Digitation",
+      "kind": "custom",
+      "refersTo": "gray-ghost",
+      "description": "Click feedback on a non-scale cell (the note sounds, but it is not part of the active scale). A 50%-opacity ink-tint ring (no fill) at the cell center via a permanent .fret__ghost span (aria-hidden, opacity 0 at rest); the note label drops to 60% opacity for the same ~400ms. Red digitation circles remain scale-only and are never replaced or contested by the gray ghost.",
+      "html": "<button type=\"button\" class=\"fret fret--ghost\" data-midi=\"58\"><span class=\"fret-note\">A♯</span><span class=\"fret__ghost\" aria-hidden=\"true\"></span></button>",
+      "css": "@keyframes fret-ghost-fade { 0% { opacity: 0; } 30% { opacity: 0.5; } 100% { opacity: 0; } } .fret__ghost { position: absolute; border: 1.5px solid #4a3d34; border-radius: 50%; opacity: 0; } .fret--ghost .fret__ghost { animation: fret-ghost-fade 400ms ease-out; } .fret--ghost .fret-note { opacity: 0.6; }"
     }
   ],
   "narrative": {
@@ -267,7 +318,7 @@
       "Do use the 2px ink border as the only depth device. No shadows."
     ],
     "donts": [
-      "Don't add a nav bar, footer, or second viewport. The poster is the page.",
+      "Don't add a nav bar, marketing footer, or card grid. A single broadsheet credits footer may sit below the poster as a printed colophon — see Footer component.",
       "Don't introduce a fifth color. The four-color palette is the system.",
       "Don't use a system display face (Impact, Arial Black, platform sans) as the display voice.",
       "Don't use a soft shadow, gradient, or glow on any surface. The world is flat and printed.",

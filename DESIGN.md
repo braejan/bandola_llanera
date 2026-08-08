@@ -237,8 +237,79 @@ The bandola's own form is a hand-rendered woodcut — a teardrop body, a rectang
 - **Do** label the audio as a placeholder. An empty `<audio data-placeholder="true">` is correct until a real recording exists.
 - **Do** use the 2px ink border as the only depth device. No shadows.
 
+## Motion
+
+Every transition in the system is a printed gesture — short, ease-out, no spring. Motion tokens live on `:root` so every component reads the same scale, and the `prefers-reduced-motion: reduce` media query collapses all of them to 0.001ms in one global rule.
+
+| Token | Value | Used by |
+|---|---|---|
+| `--motion-fast` | 200ms | hover/focus color swaps on buttons (CTA, action buttons) |
+| `--motion-medium` | 320ms | existing scale-switcher ink rule + color transitions (no change) |
+| `--motion-click` | 400ms | `.fret--playing` pulse and `.fret--ghost` ring fade on click |
+| `--motion-sequence` | 500ms | inter-note delay in `playScaleSequence` (120 BPM quarter-note) |
+| `--motion-tuning` | 700ms | inter-string delay in `playTuningCheck` (sympathetic bus tail decay) |
+| `--ease-printed` | ease-out | every new transition (matches the existing 200ms/320ms ease-out) |
+
+Reduced-motion: the existing global `@media (prefers-reduced-motion: reduce)` rule in `global.css` collapses every `animation-duration` and `transition-duration` to 0.001ms. Components add a per-component media-query block as belt-and-suspenders.
+
+## Components (continued)
+
+### Footer (broadsheet colophon)
+- **Shape:** paper background, 2px solid ink border-top only, square corners, no shadow, no gradient. The single depth device is the printed frame.
+- **Typography:** IBM Plex Sans 500 (heritage scale), ink-on-paper for the credit, ink-tint for the copyright.
+- **Content:**
+  - Credit line: `Hecho por Braejan de Witsaba con amor — para estudiantes de bandola llanera`.
+  - Links: `https://witsaba.com`, `https://github.com/braejan`, `https://linkedin.com/in/braejan`, repo URL. Every link `target="_blank" rel="noopener"`.
+  - Copyright: `© 2026 Witsaba` — label scale, uppercase, letter-spacing 0.08em.
+- **Layout:** desktop row (credit left, links center, copyright right); ≤640px column stack with the copyright centered.
+- **Rationale:** the existing "no nav bar, footer, or second viewport" rule is amended to permit a single broadsheet colophon below the poster. The poster already scrolls past the fold (12-tone key selector + linear scale reference + playable diapason); the footer is the natural conclusion, not a separate surface.
+
+### Tuning-Check button
+- **Shape:** paper background, 1px ink border, square corners, no shadow. Same CTA-paper grammar scaled to the label.
+- **Typography:** IBM Plex Sans 500, 0.8125rem, letter-spacing 0.08em, uppercase.
+- **Behavior:** clicking triggers `playTuningCheck` which plucks A3 → D4 → A4 → E5 at 700ms via `playMidiNote`. Each pluck pulses the matching open-string headstock cell (`.fret--playing` for ~400ms).
+- **Disabled state:** while a tuning or scale sequence plays, the button is disabled (text ink-tint, cursor not-allowed, no hover transition).
+- **Cancel:** a second click aborts the in-flight sequence via `AbortSignal` — no orphan tail, no overlap.
+
+### Auto-Scale button
+- **Shape:** identical paper/ink border grammar as Tuning-Check.
+- **Typography:** IBM Plex Sans 500, 0.8125rem, letter-spacing 0.08em, uppercase.
+- **Behavior:** clicking triggers `playScaleSequence` which iterates the active scale's `pitchClasses` at 500ms via `playMidiNote`. The cromática mode plays all 12 chromatic notes in ascending order.
+- **Disabled state:** same as Tuning-Check.
+- **Cancel:** second click aborts the in-flight sequence via `AbortSignal`.
+
+### Manual-Mode hint
+- **Placement:** below the two action buttons, inside the controls frame of the ScaleSwitcher.
+- **Typography:** IBM Plex Sans 500, 0.8125rem, letter-spacing 0.08em, uppercase, ink-tint.
+- **Copy:** `Modo manual: toca el diapason`. Visible at every viewport.
+- **Purpose:** makes the click-to-play affordance of the diapason discoverable without adding chrome to the instrument itself.
+
+### Click Animation
+- **Trigger:** every click on a diapason cell (fret or open string).
+- **Visual:** a 400ms pulse on the cell (scale 1 → 1.08 → 1) plus a sound-wave ripple keyframe. In-scale cells only show the pulse; non-scale cells also show the gray ghost ring.
+- **Implementation:** CSS-only keyframe + a transient `.fret--playing` class added by the `flash()` helper, removed after 400ms via `setTimeout`. No GSAP / Motion / Framer.
+- **Reduced-motion:** the global rule collapses the keyframe to 0.001ms; the `flash()` helper also short-circuits to a no-op when `matchMedia("(prefers-reduced-motion: reduce)").matches`. The audio still plays.
+
+### Gray Ghost Digitation
+- **Trigger:** click on a non-scale cell (the note is heard, but it is not part of the active scale).
+- **Visual:** a 50%-opacity ink-tint ring (no fill) at the cell center. The note label inside the cell also drops to 60% opacity for the duration of the ghost.
+- **Color:** gray (ink-tint) — the visual is "heard but not in scale". Red digitation circles remain uncontested as the scale-only marker.
+- **Implementation:** a `<span class="fret__ghost" aria-hidden="true" />` rendered inside every fret cell (always present, opacity 0 by default). The `.fret--ghost` class on the parent cell animates the span's opacity to 0.5 over 400ms and the note label to 0.6.
+- **Reduced-motion:** the global rule collapses the keyframe; the class is added and removed in the same tick.
+
+## Do's and Don'ts
+
+### Do:
+- **Do** treat every surface as a printed field. One viewport, one composition, no scroll past the fold.
+- **Do** use the four-color palette exactly. Terracotta ground, marigold accent, ink silhouette, paper interactive field.
+- **Do** author illustrations as flat woodcut inline SVG. No photographs, no gradients, no stock geometry.
+- **Do** use Rye for the display voice (headline, mode words, CTA) and IBM Plex Sans for everything else.
+- **Do** keep the diapason musically correct. A3–D4–A4–E5 tuning, real mayor/menor/armónica scale notes, no simplifications.
+- **Do** label the audio as a placeholder. An empty `<audio data-placeholder="true">` is correct until a real recording exists.
+- **Do** use the 2px ink border as the only depth device. No shadows.
+
 ### Don't:
-- **Don't** add a nav bar, footer, or second viewport. The poster is the page.
+- **Don't** add a nav bar, marketing footer, or card grid. A single broadsheet credits footer may sit below the poster as a printed colophon — see Footer component.
 - **Don't** introduce a fifth color. The four-color palette is the system.
 - **Don't** use a system display face (Impact, Arial Black, platform sans) as the display voice.
 - **Don't** use a soft shadow, gradient, or glow on any surface. The world is flat and printed.

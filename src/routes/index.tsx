@@ -3,37 +3,45 @@ import { Link, type DocumentHead } from "@builder.io/qwik-city";
 
 import { Bandola } from "../components/bandola/bandola";
 import { ScaleSwitcher } from "../components/scale-switcher/scale-switcher";
+import { Footer } from "../components/footer/footer";
 
 export default component$(() => {
   useStylesScoped$(STYLES);
 
   return (
-    <main class="poster" aria-label="Cartel de la Bandola Llanera">
-      <article class="poster-inner">
-        <header class="poster-header">
-          <h1 class="headline font-display">La Bandola Llanera</h1>
-        </header>
+    <>
+      <main class="poster" aria-label="Cartel de la Bandola Llanera">
+        <article class="poster-inner">
+          <header class="poster-header">
+            <h1 class="headline font-display">La Bandola Llanera</h1>
+          </header>
 
-        <figure class="bandola-wrap" aria-hidden="false">
-          <Bandola />
-          <figcaption class="bandola-caption">
-            Cuatro cuerdas. Afinación A3 – D4 – A4 – E5.
-          </figcaption>
-        </figure>
+          <figure class="bandola-wrap" aria-hidden="false">
+            <Bandola />
+            <figcaption class="bandola-caption">
+              Cuatro cuerdas. Afinación A3 – D4 – A4 – E5.
+            </figcaption>
+          </figure>
 
-        <ScaleSwitcher />
-
-        <div class="cta-wrap">
-          <Link href="/camino" class="cta font-display" data-testid="cta">
-            Empezar el camino
+          <Link
+            href="#diapason"
+            class="cta cta--top font-display"
+            data-testid="cta-top"
+          >
+            Toca tu primera cuerda
           </Link>
-        </div>
 
-        <p class="heritage">
-          La bandola, instrumento del folclore llanero de Colombia y Venezuela.
-        </p>
-      </article>
-    </main>
+          <ScaleSwitcher />
+
+          <p class="heritage">
+            La bandola, instrumento del folclore llanero de Colombia y
+            Venezuela.
+          </p>
+        </article>
+      </main>
+
+      <Footer />
+    </>
   );
 });
 
@@ -43,7 +51,7 @@ export const head: DocumentHead = {
     {
       name: "description",
       content:
-        "Aprende los fundamentos de la bandola llanera: afinación, escalas mayor, menor y armónica, y el camino del principiante al intérprete.",
+        "Toca tu primera cuerda — aprende bandola llanera con la afinación A3 – D4 – A4 – E5, escalas mayor, menor y armónica, y un diapason interactivo.",
     },
     {
       name: "theme-color",
@@ -125,13 +133,12 @@ const STYLES = `
     margin: 0;
   }
 
-  /* The CTA — Empezar el camino */
-  .cta-wrap {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-
+  /* The CTA — Toca tu primera cuerda. Same CTA scale as before
+     (Rye, clamp(1.25rem, 1.2vw + 0.5rem, 1.85rem) via --fs-cta, paper
+     bg, ink border, no shadow, no radius) — only the copy, target,
+     and position moved: it now sits between the bandola figure and
+     the ScaleSwitcher so it is visible in the first viewport and
+     names the concrete first move (REQ-landing-cta-1..3). */
   .cta {
     display: inline-block;
     font-family: var(--font-display);
@@ -144,6 +151,10 @@ const STYLES = `
     transition:
       background-color 200ms ease-out,
       color 200ms ease-out;
+  }
+
+  .cta--top {
+    margin-top: var(--space-3);
   }
 
   .cta:hover,
