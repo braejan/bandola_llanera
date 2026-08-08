@@ -127,6 +127,7 @@ export const ScaleSwitcher = component$(() => {
 
   return (
     <section
+      id="diapason"
       class="scale-switcher"
       aria-label="Selector de tónica, modo y estado de audio"
     >
