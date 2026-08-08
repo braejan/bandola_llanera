@@ -1,24 +1,40 @@
 /**
- * Play MIDI note — additive pluck synthesis over a single shared AudioContext.
+ * Play MIDI note — Karplus-Strong physical model + sympathetic resonance.
  *
- * Pure mapping (`midiToFrequency`) is exported for direct unit testing.
- * The lazy `AudioContext` is created on the first user gesture, resumed if
- * suspended, and reused across every subsequent note. The `VoiceManager`
- * enforces an 8-voice cap with FIFO eviction and exposes a debounce map
- * so the same fret button cannot trigger a duplicate voice within 40 ms.
+ * Each note is rendered offline to an `AudioBuffer` using a Karplus-Strong
+ * delay line, then played back through an `AudioBufferSourceNode`. The
+ * Karplus-Strong algorithm produces a realistic plucked-string decay by
+ * recirculating a noise seed through a one-pole lowpass in the feedback
+ * loop — high harmonics die faster than the fundamental, exactly how a
+ * real string loses brightness as its vibration decays.
+ *
+ * The played note ALSO feeds a parallel sympathetic resonance bus
+ * (`sympathetic-bus.ts`) with 4 narrow bandpass filters tuned to the
+ * open string frequencies (A3, D4, A4, E5). Each played note excites
+ * the open strings sympathetically, producing the characteristic
+ * "halo" of a real bandola.
+ *
+ * The lazy `AudioContext` is created on the first user gesture, resumed
+ * if suspended, and reused across every note. The `VoiceManager` enforces
+ * an 8-voice cap with FIFO eviction and exposes a debounce map so the
+ * same fret button cannot trigger a duplicate voice within 40 ms.
  *
  * SSR safety: every entry point checks `typeof window !== "undefined"` so
- * `node` is never required during static generation. The audio module is
- * therefore safe to import from any component.
+ * `node` is never required during static generation.
  *
  * No audio asset, sample, or third-party renderer is used. The result is
  * a clearly labeled "sonido sintetizado (simulación)" — see spec R5.
  */
+import { renderKarplusStrong } from "./karplus-strong";
+import {
+  createSympatheticBus,
+  type SympatheticBus,
+} from "./sympathetic-bus";
 
 export type Midi = number;
 
 export interface PlayOpts {
-  /** Peak amplitude multiplier (0..1). Defaults to 0.9. */
+  /** Peak amplitude multiplier (0..1). Defaults to 0.7. */
   velocity?: number;
   /** Total note length in milliseconds. Defaults to 800. */
   durationMs?: number;
@@ -36,7 +52,7 @@ export interface Voice {
   id: number;
   /** `ctx.currentTime` when the note was scheduled. */
   startedAt: number;
-  /** Force-stops the underlying envelope. */
+  /** Force-stops the underlying buffer source. */
   stop: () => void;
 }
 
@@ -44,21 +60,19 @@ export interface Voice {
 export const AUDIO_UNAVAILABLE_MESSAGE =
   "Audio no disponible. Toca una nota para intentarlo de nuevo.";
 
-const DEFAULT_VELOCITY = 0.9;
-const DEFAULT_DURATION_MS = 800;
+const DEFAULT_VELOCITY = 0.7;
 const DEBOUNCE_MS = 40;
-const ATTACK_S = 0.02;
-const DECAY_S = 0.2;
-const RELEASE_S = 0.4;
-/** Lowpass cutoff at attack and tail. */
-const FILTER_START_HZ = 2400;
-const FILTER_END_HZ = 1200;
-/** Additive partial mix. */
-const PARTIALS: Array<{ mul: number; amp: number }> = [
-  { mul: 1, amp: 0.6 },
-  { mul: 2, amp: 0.24 },
-  { mul: 3, amp: 0.12 },
-];
+const ATTACK_S = 0.005;
+const RELEASE_S = 0.05;
+/** Total buffer length per voice. Long enough to let the natural KS
+ *  decay fade to inaudibility for a typical pluck. */
+const KS_BUFFER_SEC = 2.5;
+/** Karplus-Strong voice parameters tuned for metal strings. */
+const KS_OPTIONS = {
+  damping: 0.35,
+  decay: 0.998,
+  durationSec: KS_BUFFER_SEC,
+};
 
 /**
  * Pure MIDI-to-frequency mapping. MIDI 69 → A4 → 440 Hz; MIDI 57 → A3 → 220 Hz.
@@ -69,6 +83,7 @@ export function midiToFrequency(midi: Midi): number {
 
 let sharedContext: AudioContext | null = null;
 let sharedManager: VoiceManager | null = null;
+let sharedSympathetic: SympatheticBus | null = null;
 let lastTriggerAt: Map<string, number> = new Map();
 
 function hasWindow(): boolean {
@@ -101,7 +116,11 @@ export function getAudioContext(): AudioContext | null {
   const Ctor = getAudioCtor();
   if (!Ctor) return null;
   sharedContext = new Ctor();
-  sharedManager = new VoiceManager(sharedContext);
+  // The sympathetic bus is created together with the AudioContext — both
+  // are lazy and only allocate on the first call. 4 bandpass filters + 1
+  // output gain is negligible memory.
+  sharedSympathetic = createSympatheticBus(sharedContext);
+  sharedManager = new VoiceManager(sharedContext, sharedSympathetic);
   return sharedContext;
 }
 
@@ -110,6 +129,14 @@ export function getAudioContext(): AudioContext | null {
  */
 export function getVoiceManager(): VoiceManager | null {
   return sharedManager;
+}
+
+/**
+ * Returns the shared sympathetic resonance bus, or `null` if the
+ * AudioContext has not been initialized yet.
+ */
+export function getSympatheticBus(): SympatheticBus | null {
+  return sharedSympathetic;
 }
 
 /**
@@ -124,9 +151,12 @@ export class VoiceManager {
   private nextId = 0;
   /** Exposed for tests only. */
   context: AudioContext;
+  /** Sympathetic resonance bus; may be `null` in early tests. */
+  sympathetic: SympatheticBus | null;
 
-  constructor(context: AudioContext) {
+  constructor(context: AudioContext, sympathetic: SympatheticBus | null) {
     this.context = context;
+    this.sympathetic = sympathetic;
   }
 
   get activeCount(): number {
@@ -140,38 +170,38 @@ export class VoiceManager {
 
   schedule(midi: Midi, opts: PlayOpts = {}): Voice | null {
     const velocity = clamp(opts.velocity ?? DEFAULT_VELOCITY, 0, 1);
-    const durationMs = opts.durationMs ?? DEFAULT_DURATION_MS;
     const freq = midiToFrequency(midi);
     const ctx = this.context;
     const t0 = ctx.currentTime;
-    const total = ATTACK_S + DECAY_S + RELEASE_S + 0.18;
 
+    // Render the Karplus-Strong plucked-string buffer for this pitch.
+    // Each note gets a freshly rendered buffer — the algorithm is cheap
+    // enough (O(samples) ≈ 100k operations per note) that pre-rendering
+    // is faster than running KS in real-time.
+    const buffer = renderKarplusStrong(ctx, freq, KS_OPTIONS);
+
+    // Outer amplitude envelope: short attack, hold at peak, short release
+    // ramp at the end of the buffer to avoid clicks. The KS algorithm
+    // already produces natural decay inside the buffer, so we don't need
+    // a separate decay envelope — just clean up the boundaries.
     const amp = ctx.createGain();
     amp.gain.setValueAtTime(0, t0);
     amp.gain.linearRampToValueAtTime(velocity, t0 + ATTACK_S);
-    amp.gain.exponentialRampToValueAtTime(0.001, t0 + ATTACK_S + DECAY_S + RELEASE_S);
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.Q.value = 0.7;
-    filter.frequency.setValueAtTime(FILTER_START_HZ, t0);
-    filter.frequency.exponentialRampToValueAtTime(
-      FILTER_END_HZ,
-      t0 + DECAY_S + RELEASE_S,
-    );
-    filter.connect(amp);
+    amp.gain.setValueAtTime(velocity, t0 + KS_BUFFER_SEC - RELEASE_S);
+    amp.gain.linearRampToValueAtTime(0, t0 + KS_BUFFER_SEC);
     amp.connect(ctx.destination);
 
-    const partials: OscillatorNode[] = [];
-    for (const p of PARTIALS) {
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.value = p.mul * freq;
-      const partialGain = ctx.createGain();
-      partialGain.gain.value = p.amp;
-      osc.connect(partialGain);
-      partialGain.connect(filter);
-      partials.push(osc);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(amp);
+    source.start(t0);
+    source.stop(t0 + KS_BUFFER_SEC);
+
+    // Feed the played note into the sympathetic resonance bus. This is
+    // what gives the bandola its characteristic "halo" of ringing open
+    // strings under each note.
+    if (this.sympathetic) {
+      this.sympathetic.trigger(source, t0);
     }
 
     const voice: Voice = {
@@ -179,19 +209,12 @@ export class VoiceManager {
       startedAt: t0,
       stop: () => {
         try {
-          amp.gain.cancelScheduledValues(ctx.currentTime);
-          amp.gain.setValueAtTime(amp.gain.value, ctx.currentTime);
-          amp.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
+          source.stop();
         } catch {
-          // The test API may not implement all ramp paths; ignore.
+          // Already stopped — ignore.
         }
       },
     };
-
-    for (const osc of partials) {
-      osc.start(t0);
-      osc.stop(t0 + total);
-    }
 
     this.voices.push(voice);
     if (this.voices.length > VoiceManager.MAX) {
@@ -199,8 +222,8 @@ export class VoiceManager {
       oldest?.stop();
     }
 
-    // Schedule cleanup after the note tail.
-    const cleanupMs = durationMs + 80;
+    // Schedule cleanup after the buffer tail.
+    const cleanupMs = KS_BUFFER_SEC * 1000 + 80;
     setTimeout(() => {
       const idx = this.voices.findIndex((v) => v.id === voice.id);
       if (idx >= 0) this.voices.splice(idx, 1);
@@ -267,7 +290,10 @@ export async function playMidiNote(
     }
   }
 
-  const manager = sharedManager ?? new VoiceManager(ctx);
+  // sharedManager is guaranteed non-null once getAudioContext() returned
+  // a valid context, but TypeScript can't see through the closure.
+  const manager = sharedManager;
+  if (!manager) return null;
   const voice = manager.schedule(midi, opts);
   if (voice && globalThis.__voices) {
     globalThis.__voices.push(voice);
@@ -286,6 +312,7 @@ function clamp(v: number, lo: number, hi: number): number {
 export function __resetAudioModuleForTests(): void {
   sharedContext = null;
   sharedManager = null;
+  sharedSympathetic = null;
   lastTriggerAt = new Map();
   globalThis.__voices = [];
   globalThis.__audio = { context: null, rejects: null };

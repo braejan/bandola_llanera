@@ -122,33 +122,64 @@ describe("playMidiNote — async + lifecycle", () => {
     }
   });
 
-  it("produces the audible frequency chain for a given MIDI note", async () => {
+  it("renders a Karplus-Strong buffer for each played note", async () => {
+    // The voice is no longer additive sine partials — it's a rendered
+    // AudioBuffer. Verify the AudioBufferSourceNode is created with a
+    // non-null buffer at the AudioContext's sample rate.
     const ctx = getAudioContext()!;
-    const capturedFreqs: number[] = [];
-    const original = ctx.createOscillator.bind(ctx);
-    ctx.createOscillator = function () {
-      const osc = original();
-      const proto = Object.getPrototypeOf(osc.frequency);
-      const desc = Object.getOwnPropertyDescriptor(proto, "value");
-      if (desc && desc.set) {
-        const setter = desc.set;
-        Object.defineProperty(osc.frequency, "value", {
-          configurable: true,
-          get() {
-            return desc.get?.call(osc.frequency);
-          },
-          set(v: number) {
-            capturedFreqs.push(v);
-            setter.call(osc.frequency, v);
-          },
-        });
-      }
-      return osc;
+    const captured: Array<{
+      sampleRate: number;
+      length: number;
+      hasData: boolean;
+    }> = [];
+    const original = ctx.createBufferSource.bind(ctx);
+    ctx.createBufferSource = function () {
+      const src = original();
+      Object.defineProperty(src, "buffer", {
+        configurable: true,
+        get() {
+          // web-audio-test-api exposes the buffer property differently
+          // from the native AudioBufferSourceNode — we read whatever is
+          // currently set when schedule() runs.
+          return this._buffer ?? this._.buffer ?? null;
+        },
+        set(v: AudioBuffer | null) {
+          if (v) {
+            const data = v.getChannelData(0);
+            let maxAbs = 0;
+            for (let i = 0; i < data.length; i++) {
+              const abs = Math.abs(data[i]);
+              if (abs > maxAbs) maxAbs = abs;
+            }
+            captured.push({
+              sampleRate: v.sampleRate,
+              length: v.length,
+              hasData: maxAbs > 0,
+            });
+          }
+          this._buffer = v;
+        },
+      });
+      return src;
     };
     await playMidiNote(57);
-    expect(capturedFreqs).toContain(220);
-    expect(capturedFreqs).toContain(440);
-    expect(capturedFreqs).toContain(660);
+    expect(captured.length).toBeGreaterThanOrEqual(1);
+    const b = captured[captured.length - 1];
+    expect(b.sampleRate).toBe(ctx.sampleRate);
+    expect(b.length).toBeGreaterThan(ctx.sampleRate); // > 1 second
+    expect(b.hasData).toBe(true);
+  });
+
+  it("feeds each note into the sympathetic resonance bus", async () => {
+    // After playMidiNote, the shared sympathetic bus must be initialized.
+    const { getSympatheticBus } = await import("./play-midi-note");
+    await playMidiNote(57);
+    const bus = getSympatheticBus();
+    expect(bus).not.toBeNull();
+    expect(bus!.openFrequencies.length).toBe(4);
+    // A3 = 220 Hz, D4 ≈ 293.66 Hz, A4 = 440 Hz, E5 ≈ 659.26 Hz
+    expect(bus!.openFrequencies[0]).toBeCloseTo(220, 1);
+    expect(bus!.openFrequencies[2]).toBe(440);
   });
 
   it("transitions a suspended context to running", async () => {
@@ -248,7 +279,7 @@ describe("VoiceManager — polyphony cap", () => {
 
   it("evicts the oldest voice when a 10th trigger fires", () => {
     const ctx = getAudioContext()!;
-    const manager = new VoiceManager(ctx);
+    const manager = new VoiceManager(ctx, null);
     const ids: number[] = [];
     for (let i = 0; i < 10; i++) {
       const voice = manager.schedule(57 + i);
@@ -261,7 +292,7 @@ describe("VoiceManager — polyphony cap", () => {
 
   it("never grows above MAX active voices", () => {
     const ctx = getAudioContext()!;
-    const manager = new VoiceManager(ctx);
+    const manager = new VoiceManager(ctx, null);
     for (let i = 0; i < 30; i++) manager.schedule(60 + (i % 12));
     expect(manager.activeCount).toBe(8);
   });
