@@ -282,31 +282,64 @@ const STYLES = `
   }
 
   /* Per-string real-size simulation: thickness and material color.
-     A3 (top) — thick, strong metal bordón (ink).
-     D4       — medium, a little smaller, metallic (ink).
-     A4       — thin, nylon prima (ink-tint).
-     E5       — thinnest, nylon prima (ink-tint). */
+     A3 (top) — thick metal bordón (silver/chrome gradient).
+     D4       — medium metal bordón (silver/chrome gradient).
+     A4       — medium nylon prima (solid ink, more weight than E5).
+     E5       — thinnest nylon prima (solid ink, lighter than A4).
+     The metal strings use a multi-stop linear gradient to simulate
+     the cylindrical reflection of a wound metal wire (light top,
+     dark middle, lighter band, dark bottom). The nylon strings are
+     a solid ink with no gradient. A4 (1.8px) is thicker than E5
+     (1.2px) so the second prima reads with more weight than the
+     thinnest prima. */
   .string-row--a3 {
     --string-thickness: 3.5px;
-    --string-color: var(--color-ink);
+    --string-color: linear-gradient(
+      to bottom,
+      #e8e8e8 0%,
+      #f8f8f8 12%,
+      #b8b8b8 28%,
+      #888888 48%,
+      #c8c8c8 62%,
+      #a8a8a8 82%,
+      #686868 100%
+    );
   }
   .string-row--d4 {
     --string-thickness: 2.5px;
-    --string-color: var(--color-ink);
+    --string-color: linear-gradient(
+      to bottom,
+      #e8e8e8 0%,
+      #f8f8f8 12%,
+      #b8b8b8 28%,
+      #888888 48%,
+      #c8c8c8 62%,
+      #a8a8a8 82%,
+      #686868 100%
+    );
   }
   .string-row--a4 {
-    --string-thickness: 1.5px;
-    --string-color: var(--color-ink-tint);
+    --string-thickness: 1.8px;
+    --string-color: var(--color-ink);
   }
   .string-row--e5 {
-    --string-thickness: 1px;
-    --string-color: var(--color-ink-tint);
+    --string-thickness: 1.2px;
+    --string-color: var(--color-ink);
   }
 
   /* The string line — the playable string, from the nut (right) to the
      body (left). Thickness and color come from the per-row custom
      properties, so each string simulates its real gauge and material.
-     z-index 2 places it above the trastes and the cell backgrounds. */
+
+     Z-index hierarchy (bottom to top, per the user's spec):
+       0 — string line     (this rule)
+       1 — fret cell       (.fret)
+       2 — digitation ring (.fret--in-scale::before)
+       3 — fret note text  (.fret-note)
+       4 — alternative     (.fret-alternative)
+
+     The string sits UNDER the cell and the text, so the labels and
+     circles read on top of the wire, not behind it. */
   .diapason-string::after {
     content: "";
     position: absolute;
@@ -316,7 +349,7 @@ const STYLES = `
     height: var(--string-thickness, 2px);
     background: var(--string-color, var(--color-ink));
     transform: translateY(-50%);
-    z-index: 2;
+    z-index: 0;
     pointer-events: none;
   }
 
@@ -327,7 +360,10 @@ const STYLES = `
      this playing position from the next. Fret 0 has no right border
      because the nut (headstock's left border) is its right separator.
      The base element is a <button> so it is keyboard-activatable; the
-     border is reset so the printed-frame grid stays intact. */
+     border is reset so the printed-frame grid stays intact.
+
+     z-index 1 places the cell above the string line (z 0) so the
+     text and the digitation ring read on top of the wire. */
   .fret {
     position: relative;
     display: flex;
@@ -347,32 +383,50 @@ const STYLES = `
       color 320ms ease-out;
     min-width: 0;
     gap: 1px;
+    z-index: 1;
   }
 
-  /* Fret 0 (open string) — a hollow digitation-red ring spanning the
-     full string width at the nut. The activation marker is the ring
-     itself; the note label sits centered on the string. */
+  /* Fret 0 (open string) — a hollow digitation-red ring at the nut.
+     The cell is taller than the string thickness (24px min-height)
+     so the headstock label ("A3", "D4", etc.) and the "abierta"
+     marker fit cleanly inside the ring without overflowing. The
+     label and marker stack vertically (column flex). */
   .fret--open {
     border: 2px solid var(--color-digitation);
     background: transparent;
-    height: var(--string-thickness, 2px);
+    height: auto;
+    min-height: 24px;
+    padding: 3px 2px;
     color: var(--color-ink);
-    flex-direction: row;
-    gap: 4px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    aspect-ratio: auto;
   }
 
   /* When the open string is in the current scale, the ring becomes
      the "preferred" fingering. We keep the hollow ring but add a
-     subtle background tint and a small "abierta" text label. */
+     subtle background tint and a small "abierta" text label below
+     the headstock name. */
   .fret--preferred {
     background: rgba(192, 57, 43, 0.08);
   }
   .open-marker {
-    font-size: 0.45rem;
+    position: relative;
+    z-index: 3;
+    font-size: 0.5rem;
     color: var(--color-digitation);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     font-weight: 700;
+    line-height: 1;
+  }
+  .headstock-label {
+    position: relative;
+    z-index: 3;
+    text-transform: uppercase;
+    line-height: 1;
   }
 
   /* Trastes — the 7 vertical metal fret bars, drawn as right borders on
@@ -384,7 +438,7 @@ const STYLES = `
 
   .fret-note {
     position: relative;
-    z-index: 4;
+    z-index: 3;
     font-size: var(--fs-note);
     font-weight: 600;
     line-height: 1;
@@ -418,7 +472,7 @@ const STYLES = `
     background: var(--color-digitation);
     border: 1.5px solid var(--color-ink);
     border-radius: 50%;
-    z-index: 3;
+    z-index: 2;
     pointer-events: none;
     transition:
       background-color 320ms ease-out,
