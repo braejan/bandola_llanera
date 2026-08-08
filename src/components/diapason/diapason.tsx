@@ -521,10 +521,15 @@ const STYLES = `
     letter-spacing: 0.04em;
     color: var(--color-ink);
     line-height: 1;
-    border: 2px solid var(--color-digitation);
+    /* NO border — the previous 2px digitation border was overriding
+       the .fret--open 'border: none' rule via CSS source order
+       (same specificity, this rule comes later). The "abierta"
+       marker is the only open-string indicator. */
+    border: none;
     background: transparent;
-    padding: 0 4px;
-    height: var(--string-thickness, 2px);
+    padding: 3px 2px;
+    height: auto;
+    min-height: 24px;
     cursor: pointer;
     font: inherit;
     order: 1;
