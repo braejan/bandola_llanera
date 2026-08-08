@@ -386,13 +386,16 @@ const STYLES = `
     z-index: 1;
   }
 
-  /* Fret 0 (open string) — a hollow digitation-red ring at the nut.
-     The cell is taller than the string thickness (24px min-height)
-     so the headstock label ("A3", "D4", etc.) and the "abierta"
-     marker fit cleanly inside the ring without overflowing. The
-     label and marker stack vertically (column flex). */
+  /* Fret 0 (open string) — the headstock cell at the nut. The cell
+     is taller than the string thickness (24px min-height) so the
+     headstock label ("A3", "D4", etc.) and the "abierta" marker
+     fit cleanly inside without overflowing. The label and marker
+     stack vertically (column flex). The border is a subtle ink-tint
+     (not digitation red — the red is reserved for the in-scale
+     digitation circles on the left, per the user's request to
+     remove the red borders). */
   .fret--open {
-    border: 2px solid var(--color-digitation);
+    border: 1px solid var(--color-ink-tint);
     background: transparent;
     height: auto;
     min-height: 24px;
@@ -405,18 +408,17 @@ const STYLES = `
     aspect-ratio: auto;
   }
 
-  /* When the open string is in the current scale, the ring becomes
-     the "preferred" fingering. We keep the hollow ring but add a
-     subtle background tint and a small "abierta" text label below
-     the headstock name. */
+  /* When the open string is in the current scale, the cell gets a
+     subtle background tint to mark it as the "preferred" fingering
+     (without using the digitation red). */
   .fret--preferred {
-    background: rgba(192, 57, 43, 0.08);
+    background: rgba(26, 20, 16, 0.04);
   }
   .open-marker {
     position: relative;
     z-index: 3;
     font-size: 0.5rem;
-    color: var(--color-digitation);
+    color: var(--color-ink-tint);
     letter-spacing: 0.05em;
     text-transform: uppercase;
     font-weight: 700;
