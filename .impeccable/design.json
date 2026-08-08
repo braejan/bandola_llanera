@@ -152,12 +152,44 @@
       "css": ".ds-cta { display: inline-block; font-family: Rye, Alfa Slab One, Georgia, serif; font-size: clamp(1.25rem, 1.2vw + 0.5rem, 1.85rem); font-weight: 400; color: #b7410e; background: #f5ebd8; padding: 0.75rem 2rem; border: 2px solid #1a1410; letter-spacing: 0.02em; text-decoration: none; transition: background-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), color 200ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-cta:hover, .ds-cta:focus-visible { background: #e8a33d; color: #1a1410; }"
     },
     {
-      "name": "Audio Toggle",
+      "name": "Audio Synthesis Label",
+      "kind": "text",
+      "refersTo": "synthesis-label",
+      "description": "Honest disclosure that the audio is synthesized, not a real bandola recording. Rendered as a typography label inside the controls frame above the diapason. The text is mandatory and never replaced.",
+      "html": "<p class=\"ds-synthesis-label\" aria-label=\"Sonido sintetizado\">sonido sintetizado (simulación)</p>",
+      "css": ".ds-synthesis-label { margin: 0; font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #4a3d34; text-align: center; }"
+    },
+    {
+      "name": "Audio Status Node",
+      "kind": "text",
+      "refersTo": "audio-status",
+      "description": "Spanish status mirror for the audio module's onStatus callback. Hidden when audio is available; visible when the user gesture is rejected or the AudioContext cannot be created. Wired via the AudioStatusContext from the Diapason's click handler.",
+      "html": "<p class=\"ds-audio-status\" role=\"status\" aria-live=\"polite\" data-audio-status=\"idle\"></p>",
+      "css": ".ds-audio-status { margin: 0; min-height: 1.4em; font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-size: 0.8125rem; font-weight: 500; color: #1a1410; text-align: center; opacity: 0; transition: opacity 200ms ease-out; } .ds-audio-status[data-audio-status=\"active\"] { opacity: 1; }"
+    },
+    {
+      "name": "Diapason Open String",
       "kind": "button",
-      "refersTo": "audio-toggle",
-      "description": "Labeled placeholder for a future real audio sample. No fabricated recording.",
-      "html": "<button class=\"ds-audio\" type=\"button\" aria-label=\"Reproducir audio de muestra (placeholder)\" aria-pressed=\"false\"><span class=\"ds-audio-dot\"></span><span class=\"ds-audio-label\">Audio de muestra (placeholder)</span></button>",
-      "css": ".ds-audio { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border: 1px solid #1a1410; color: #1a1410; background: #f5ebd8; font-family: IBM Plex Sans, Helvetica Neue, Arial, sans-serif; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.04em; cursor: pointer; transition: background-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), color 200ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-audio:hover, .ds-audio:focus-visible { background: #1a1410; color: #f5ebd8; } .ds-audio[aria-pressed=\"true\"] { background: #1a1410; color: #f5ebd8; } .ds-audio-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }"
+      "refersTo": "diapason-open-string",
+      "description": "The open-string target at the nut of each string. Renders as a hollow digitation-red ring spanning the full string width. The first DOM child of each row so the keyboard tab order starts with the open string (spec S6.1); CSS order: 1 keeps it visually on the right. When the open string produces a scale tone in the current key+mode, a small \"abierta\" marker labels it as the preferred fingering.",
+      "html": "<button class=\"ds-fret ds-fret--open ds-fret--preferred\" type=\"button\" data-midi=\"57\" data-string=\"A3\" data-fret=\"0\" data-preferred=\"true\" aria-label=\"Cuerda abierta A3, MIDI 57, nota de la escala\"><span class=\"ds-headstock-label\">A3</span><span class=\"ds-open-marker\">abierta</span></button>",
+      "css": ".ds-fret--open { border: 2px solid #c0392b; background: transparent; height: 2px; color: #1a1410; order: 1; } .ds-fret--preferred { background: rgba(192, 57, 43, 0.08); } .ds-open-marker { font-size: 0.45rem; color: #c0392b; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }"
+    },
+    {
+      "name": "Diapason Fret — Has Open Alternative",
+      "kind": "button",
+      "refersTo": "diapason-fret-has-open",
+      "description": "A fretted scale cell whose exact MIDI pitch matches an in-scale open string. Renders the standard filled red circle plus a small \"(=D4)\" label that names the open-string alternative. The label teaches the open-string preference without prose.",
+      "html": "<button class=\"ds-fret ds-fret--in-scale ds-fret--has-open\" type=\"button\" data-midi=\"62\" data-string=\"A3\" data-fret=\"5\" data-preferred=\"true\" aria-label=\"Nota D, MIDI 62, A3, traste 5, alternativa cuerda abierta D4\"><span class=\"ds-fret-note\">D</span><span class=\"ds-fret-alternative\">(D4)</span></button>",
+      "css": ".ds-fret--has-open .ds-fret-alternative { position: relative; z-index: 4; font-size: 0.5rem; color: #4a3d34; background: #f5ebd8; padding: 0 2px; font-weight: 500; }"
+    },
+    {
+      "name": "Scale Key Selector — Active",
+      "kind": "button",
+      "refersTo": "key-button-active",
+      "description": "The active tonic key word (Do / Re / Mi / Fa / Sol / La / Si). Renders in the ground color (terracotta) with the active ink rule.",
+      "html": "<button class=\"ds-key ds-key--active\" type=\"button\" role=\"radio\" aria-checked=\"true\" data-key=\"re\"><span>Re</span></button>",
+      "css": ".ds-key { font-family: Rye, Alfa Slab One, Georgia, serif; font-size: clamp(1.1rem, 1.2vw + 0.5rem, 1.4rem); font-weight: 400; color: #1a1410; background: transparent; border: none; letter-spacing: 0.02em; padding: 0.25rem 0.5rem; cursor: pointer; position: relative; transition: color 320ms cubic-bezier(0.2, 0.8, 0.2, 1); } .ds-key::after { content: ''; position: absolute; left: 0.5rem; right: 0.5rem; bottom: 0.25rem; height: 2px; background: #1a1410; transform: scaleX(1); transform-origin: left center; } .ds-key--active, .ds-key--active:hover { color: #b7410e; } .ds-key--active::after { background: #b7410e; }"
     },
     {
       "name": "Scale Mode Button — Active",
@@ -202,29 +234,36 @@
   ],
   "narrative": {
     "northStar": "The Festival del Joropo Cartell",
-    "overview": "A llanero festival poster is not a UI; it is a printed field that owns the wall it hangs on. This system carries that grammar onto the web: every surface is a committed graphic artifact, not a collection of cards. The landing is a single poster — one viewport, top to bottom, no nav, no footer, no second scroll. The visitor does not browse; they arrive, see the bandola, touch the diapason, and follow the printed path to the next step.\n\nThe palette is saturated folk-modern, not muted editorial: a deep terracotta ground, a warm marigold accent, a near-black silhouette, and an off-white paper. Wood-type display carries the voice; a workhorse sans carries the body. The bandola is hand-rendered as a flat woodcut, not a photograph. The diapason is a real fretboard with the canonical A3–D4–A4–E5 tuning and the real mayor, menor, and armónica scale notes — the differentiator is the instrument itself, demonstrated on the first viewport, not described in a feature card.",
+    "overview": "A llanero festival poster is not a UI; it is a printed field that owns the wall it hangs on. This system carries that grammar onto the web: every surface is a committed graphic artifact, not a collection of cards. The landing is a single poster — no nav, no second scroll, no second viewport. The poster is at least one screen tall but scrolls when the content (header, bandola, scale switcher, scale reference, diapason, CTA, heritage) exceeds the viewport — the original \"no scroll past the fold\" principle held when the page was a single headline + bandola + 3-mode switcher; the new 12-tone key selector + 4-mode scale system + linear scale reference + playable diapason with per-note audio made the page taller than one viewport on smaller screens. Scrolling is the honest fix: the page is one composition, not one viewport. The visitor does not browse; they arrive, see the bandola, touch the diapason, and follow the printed path to the next step.\n\nThe palette is saturated folk-modern, not muted editorial: a deep terracotta ground, a warm marigold accent, a near-black silhouette, and an off-white paper. Wood-type display carries the voice; a workhorse sans carries the body. The bandola is hand-rendered as a flat woodcut, not a photograph. The diapason is a real fretboard with the canonical A3–D4–A4–E5 tuning (MIDI 57, 62, 69, 76). The default scale is Re mayor (D major, the most common in joropo); the student can switch among 12 keys (Do, Do♯, Re, Re♯, Mi, Fa, Fa♯, Sol, Sol♯, La, La♯, Si — strict chromatic order, matching the linear scale reference below the controls) and 4 modes (mayor, menor, armónica, cromática) for 48 scale combinations. The cromática mode covers all 12 semitones of the octave (C C# D D# E F F# G G# A A# B) and is the full chromatic scale — every fret is a scale tone, useful for studying position work and slide technique. The diapason is interactive: every fret and open string is a playable target that synthesizes the correct MIDI pitch via native Web Audio (A3 at 220 Hz, A4 at 440 Hz, etc.). Open strings are the preferred fingering when their pitch is in the current scale; a small \"abierta\" marker labels them and a \"(=abierta)\" alternative label appears on any fretted cell whose exact MIDI pitch matches an in-scale open string. A linear scale-reference view between the controls and the diapason shows the current scale's notes in chromatic order (Do, Do♯, Re, Re♯, Mi, Fa, Fa♯, Sol, Sol♯, La, La♯, Si), each note a clickable button that plays the synthesized pitch.",
     "keyCharacteristics": [
-      "A poster is a page, not a hero. One viewport, one composition, no scroll past the fold.",
+      "A poster is a page, not a hero. One composition, no nav, no second viewport. The page is at least one screen tall and scrolls when the content exceeds the viewport — the 12-tone key selector, 4-mode scale system, linear scale reference, and playable diapason are honest work that earns its real estate.",
       "The bandola is a woodcut silhouette, not a stock photo. Authored as inline SVG, not imported.",
-      "The diapason is the proof. It is interactive on the first viewport, with switchable scales.",
-      "The scale switcher is typography, not a control. Three wood-type words, the active one in the dominant ground.",
-      "The audio is a labeled placeholder. No fabricated recordings until real audio exists.",
+      "The diapason is the proof. It is interactive, with switchable scales and per-note playback.",
+      "The scale switcher is typography, not a control. Two radiogroups above the diapason: a 12-key selector in strict chromatic order (Do, Do♯, Re, Re♯, Mi, Fa, Fa♯, Sol, Sol♯, La, La♯, Si) and a 4-mode selector (Mayor, Menor, Armónica, Cromática). The active word in each renders in the dominant ground color.",
+      "A linear scale-reference view between the controls and the diapason shows the current scale's notes in chromatic order. Each note is a clickable button that plays the synthesized pitch — same audio module, same debounce, same voice cap as the diapason.",
+      "Open strings are the preferred fingering when they produce a scale tone. A small \"abierta\" marker labels the open string; a \"(=abierta)\" alternative label appears on any fretted cell whose exact MIDI pitch matches an in-scale open string. The student learns the open-string fingering first.",
+      "The audio is synthesized, not recorded. A native Web Audio additive pluck graph plays the correct pitch for every fret and open string; the synthesis is explicitly labeled \"sonido sintetizado (simulación)\" so no listener is misled into believing a real bandola was sampled.",
       "Spanish throughout. No English copy on any surface."
     ],
     "rules": [
-      { "name": "The Four Poster Colors + Functional Digitation", "body": "The four poster colors (terracotta, marigold, ink, paper) carry the surface. Digitation red is a functional fifth color, used only for the digitation markers (scale circles on the strings, fingering numerals) inside the diapason. It never decorates a surface, never replaces a poster color, and never appears outside the diapason's scale/fingering context.", "section": "colors" },
-      { "name": "The Active-Ink Rule", "body": "The active scale word renders in the ground color (terracotta), not in a new color. The active state is the page speaking, not a control changing.", "section": "colors" },
+      { "name": "The Four Poster Colors + Functional Digitation", "body": "The four poster colors (terracotta, marigold, ink, paper) carry the surface. Digitation red is a functional fifth color, used only for the digitation markers (scale circles on the strings, fingering numerals, open-string alternative labels) inside the diapason. It never decorates a surface, never replaces a poster color, and never appears outside the diapason's scale/fingering context.", "section": "colors" },
+      { "name": "The Active-Ink Rule", "body": "The active key word and active mode word render in the ground color (terracotta), not in a new color. The active state is the page speaking, not a control changing.", "section": "colors" },
       { "name": "The Wood-Type Voice Rule", "body": "Rye (or Alfa Slab One as a fallback) is the display face. No system display faces (Impact, Arial Black, platform sans) as the display voice — they read as system, not as a poster.", "section": "typography" },
-      { "name": "The Body Stays Workhorse Rule", "body": "IBM Plex Sans (or any humanist workhorse) carries the body, labels, and notes. The display does not bleed into the body. Rye is for the headline, the mode words, and the CTA — never for body copy.", "section": "typography" },
-      { "name": "The Flat-Printed Rule", "body": "Surfaces are flat at rest. The 2px ink border is structural, not decorative. If a future surface needs to convey hierarchy, it does so with the ink-on-paper relationship, not with a shadow.", "section": "elevation" }
+      { "name": "The Body Stays Workhorse Rule", "body": "IBM Plex Sans (or any humanist workhorse) carries the body, labels, and notes. The display does not bleed into the body. Rye is for the headline, the key words, the mode words, and the CTA — never for body copy.", "section": "typography" },
+      { "name": "The Flat-Printed Rule", "body": "Surfaces are flat at rest. The 2px ink border is structural, not decorative. If a future surface needs to convey hierarchy, it does so with the ink-on-paper relationship, not with a shadow.", "section": "elevation" },
+      { "name": "The Honest Audio Rule", "body": "The audio is synthesized, never recorded. The visible label \"sonido sintetizado (simulación)\" is mandatory; no <audio src> element ever ships. The labels \"sonido sintetizado\" and the Spanish status \"Audio no disponible. Toca una nota para intentarlo de nuevo.\" are the only on-screen audio claims.", "section": "audio" },
+      { "name": "The Open-Versus-Fretted Rule", "body": "Open strings (fret 0) are rendered as a hollow digitation-red ring spanning the full string width at the nut. Fretted scale notes are rendered as a filled digitation-red circle at the fret position. The two states are never visually ambiguous; their ARIA labels distinguish them too.", "section": "diapason" },
+      { "name": "The Open-String-Preference Rule", "body": "When an open string produces a scale tone, it is the preferred fingering. The open-string button gets a small \"abierta\" marker. When a fretted cell's exact MIDI pitch matches an in-scale open string, the cell gets a small \"(=abierta)\" alternative label so the player knows the open string is the alternative. The open string is louder, cleaner, and the standard fingering — the labels teach that without prose.", "section": "diapason" },
+      { "name": "The Scale-Composition Rule", "body": "The Diapason receives a scale id of the form `{key}-{mode}` (e.g. \"re-mayor\"). The Diapason reads the scale's pitch classes from a single source of truth (src/music/scales.ts) and renders the in-scale frets and the open-string preferences. The key+mode selectors live in the ScaleSwitcher; the Diapason stays a pure function of the scale id.", "section": "diapason" }
     ],
     "dos": [
-      "Do treat every surface as a printed field. One viewport, one composition, no scroll past the fold.",
+      "Do treat every surface as a printed field. One composition, no nav, no second viewport. The page may scroll when content exceeds the viewport — the work earns the real estate.",
       "Do use the four-color palette exactly. Terracotta ground, marigold accent, ink silhouette, paper interactive field.",
       "Do author illustrations as flat woodcut inline SVG. No photographs, no gradients, no stock geometry.",
-      "Do use Rye for the display voice (headline, mode words, CTA) and IBM Plex Sans for everything else.",
-      "Do keep the diapason musically correct. A3–D4–G4–B4 tuning, real mayor/menor/armónica scale notes, no simplifications.",
-      "Do label the audio as a placeholder. An empty <audio data-placeholder=\"true\"> is correct until a real recording exists.",
+      "Do use Rye for the display voice (headline, key words, mode words, CTA) and IBM Plex Sans for everything else.",
+      "Do keep the diapason musically correct. A3–D4–A4–E5 tuning (MIDI 57, 62, 69, 76), 48 scale combinations (12 keys × 4 modes including cromática), no simplifications.",
+      "Do default the landing scale to Re mayor (D major) — the most common in joropo.",
+      "Do label the audio as a synthetic simulation. The visible \"sonido sintetizado (simulación)\" label is the only honest audio claim.",
       "Do use the 2px ink border as the only depth device. No shadows."
     ],
     "donts": [
@@ -232,7 +271,7 @@
       "Don't introduce a fifth color. The four-color palette is the system.",
       "Don't use a system display face (Impact, Arial Black, platform sans) as the display voice.",
       "Don't use a soft shadow, gradient, or glow on any surface. The world is flat and printed.",
-      "Don't fabricate photographs, audio, testimonials, customers, benchmarks, or pricing. Label placeholders clearly.",
+      "Don't fabricate photographs, audio recordings, testimonials, customers, benchmarks, or pricing. Label the synthesis honestly.",
       "Don't add English copy. The product is Spanish.",
       "Don't simplify the musical content. The tuning and the scale notes are the proof."
     ]

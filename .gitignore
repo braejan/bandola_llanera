@@ -44,3 +44,4 @@ lerna-debug.log*
 # Tooling caches (not part of the product)
 .atl/
 .vite/
+.codegraph/
