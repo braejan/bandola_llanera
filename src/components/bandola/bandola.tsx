@@ -33,18 +33,56 @@ export const Bandola = component$(() => {
         </g>
       </defs>
 
-      {/* Body — compact, rounded oval shape (small-bodied chordophone). */}
-      <path
-        d="M 285,85
-           C 240,82 190,98 150,124
-           C 112,148 82,180 70,212
-           C 58,244 70,272 105,284
-           C 142,296 188,294 230,286
-           C 270,278 296,260 302,236
-           C 308,214 308,184 308,154
-           C 308,124 304,100 285,85 Z"
-        fill="var(--color-ink)"
-      />
+      {/*
+        Body, soundhole, bridge, and tailpiece — scaled taller together
+        around y=175 (close to the neck's own left-edge midpoint,
+        ~165), so the soundbox reads bigger without disturbing the
+        neck/body seam at x=302. A real bandola's soundbox is the
+        dominant visual mass; the original body read a little flat
+        next to the neck.
+      */}
+      <g transform="translate(0 175) scale(1 1.1) translate(0 -175)">
+        {/* Body — compact, rounded oval shape (small-bodied chordophone). */}
+        <path
+          d="M 285,85
+             C 240,82 190,98 150,124
+             C 112,148 82,180 70,212
+             C 58,244 70,272 105,284
+             C 142,296 188,294 230,286
+             C 270,278 296,260 302,236
+             C 308,214 308,184 308,154
+             C 308,124 304,100 285,85 Z"
+          fill="var(--color-ink)"
+        />
+
+        {/* Soundhole — negative space, ground color (terracotta) shows through */}
+        <circle
+          cx="150"
+          cy="198"
+          r="32"
+          fill="var(--color-ground)"
+        />
+        <circle
+          cx="150"
+          cy="198"
+          r="32"
+          fill="none"
+          stroke="var(--color-ink)"
+          stroke-width="2"
+        />
+
+        {/* Bridge — small dark rectangle on the body where strings anchor */}
+        <rect
+          x="246"
+          y="188"
+          width="48"
+          height="9"
+          fill="var(--color-ink)"
+        />
+
+        {/* Tailpiece pin at the bottom of the body — small accent */}
+        <circle cx="296" cy="262" r="3" fill="var(--color-ground)" />
+      </g>
 
       {/* Neck — slightly trapezoidal, narrower at the body, wider at the headstock */}
       <path
@@ -52,44 +90,48 @@ export const Bandola = component$(() => {
         fill="var(--color-ink)"
       />
 
-      {/* Headstock — distinct flat paddle shape, broader than the neck */}
-      <path
-        d="M 660,92
-           L 770,84
-           C 788,84 794,94 793,110
-           L 793,210
-           C 794,226 788,236 770,236
-           L 660,228
-           C 645,226 640,216 640,200
-           L 640,120
-           C 640,104 645,94 660,92 Z"
-        fill="var(--color-ink)"
-      />
+      {/*
+        Headstock, nut, and tuning pegs — scaled down together around the
+        neck/headstock junction (660,160) so the paddle reads smaller
+        relative to the body. A real bandola llanera has a compact
+        headstock next to a proportionally large soundbox; the original
+        1:1 paddle was oversized against the body, so this group is
+        scaled to 0.75 instead of hand-redrawn, keeping the join with
+        the neck seamless (the pivot x sits exactly on the neck's right
+        edge, so it doesn't shift).
+      */}
+      <g transform="translate(660 160) scale(0.75) translate(-660 -160)">
+        {/* Headstock — distinct flat paddle shape, broader than the neck */}
+        <path
+          d="M 660,92
+             L 770,84
+             C 788,84 794,94 793,110
+             L 793,210
+             C 794,226 788,236 770,236
+             L 660,228
+             C 645,226 640,216 640,200
+             L 640,120
+             C 640,104 645,94 660,92 Z"
+          fill="var(--color-ink)"
+        />
 
-      {/* Soundhole — negative space, ground color (terracotta) shows through */}
-      <circle
-        cx="150"
-        cy="198"
-        r="32"
-        fill="var(--color-ground)"
-      />
-      <circle
-        cx="150"
-        cy="198"
-        r="32"
-        fill="none"
-        stroke="var(--color-ink)"
-        stroke-width="2"
-      />
+        {/* Nut — at the junction of neck and headstock */}
+        <rect
+          x="658"
+          y="117"
+          width="6"
+          height="86"
+          fill="var(--color-ground)"
+        />
 
-      {/* Bridge — small dark rectangle on the body where strings anchor */}
-      <rect
-        x="246"
-        y="188"
-        width="48"
-        height="9"
-        fill="var(--color-ink)"
-      />
+        {/* Tuning pegs — four small circles on the headstock */}
+        <g>
+          <circle cx="710" cy="110" r="9" fill="var(--color-ground)" />
+          <circle cx="710" cy="148" r="9" fill="var(--color-ground)" />
+          <circle cx="710" cy="186" r="9" fill="var(--color-ground)" />
+          <circle cx="710" cy="220" r="9" fill="var(--color-ground)" />
+        </g>
+      </g>
 
       {/* Frets — six thin terracotta lines crossing the neck */}
       <g
@@ -113,26 +155,6 @@ export const Bandola = component$(() => {
       >
         <use href="#bandola-strings" />
       </g>
-
-      {/* Nut — at the junction of neck and headstock */}
-      <rect
-        x="658"
-        y="117"
-        width="6"
-        height="86"
-        fill="var(--color-ground)"
-      />
-
-      {/* Tuning pegs — four small circles on the headstock */}
-      <g>
-        <circle cx="710" cy="110" r="9" fill="var(--color-ground)" />
-        <circle cx="710" cy="148" r="9" fill="var(--color-ground)" />
-        <circle cx="710" cy="186" r="9" fill="var(--color-ground)" />
-        <circle cx="710" cy="220" r="9" fill="var(--color-ground)" />
-      </g>
-
-      {/* Tailpiece pin at the bottom of the body — small accent */}
-      <circle cx="296" cy="262" r="3" fill="var(--color-ground)" />
     </svg>
   );
 });

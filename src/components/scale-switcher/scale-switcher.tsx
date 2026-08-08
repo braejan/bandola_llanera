@@ -471,15 +471,17 @@ const STYLES = `
       gap: var(--space-1) var(--space-2);
     }
     .modes {
-      flex-direction: column;
+      flex-direction: row;
+      flex-wrap: wrap;
       align-items: center;
-      gap: var(--space-2);
+      gap: var(--space-1) var(--space-3);
     }
     .key {
       font-size: clamp(1.1rem, 4vw, 1.4rem);
     }
     .mode {
-      font-size: clamp(1.35rem, 6vw, 1.75rem);
+      font-size: clamp(0.95rem, 4.5vw, 1.2rem);
+      padding: var(--space-1);
     }
   }
 
