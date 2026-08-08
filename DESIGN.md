@@ -259,7 +259,7 @@ Reduced-motion: the existing global `@media (prefers-reduced-motion: reduce)` ru
 - **Typography:** IBM Plex Sans 500 (heritage scale), ink-on-paper for the credit, ink-tint for the copyright.
 - **Content:**
   - Credit line: `Hecho por Braejan de Witsaba con amor — para estudiantes de bandola llanera`.
-  - Links: `https://witsaba.com`, `https://github.com/witsaba`, `https://linkedin.com/in/braejan`, repo URL. Every link `target="_blank" rel="noopener"`.
+  - Links: `https://witsaba.com`, `https://github.com/braejan`, `https://linkedin.com/in/braejan`, repo URL. Every link `target="_blank" rel="noopener"`.
   - Copyright: `© 2026 Witsaba` — label scale, uppercase, letter-spacing 0.08em.
 - **Layout:** desktop row (credit left, links center, copyright right); ≤640px column stack with the copyright centered.
 - **Rationale:** the existing "no nav bar, footer, or second viewport" rule is amended to permit a single broadsheet colophon below the poster. The poster already scrolls past the fold (12-tone key selector + linear scale reference + playable diapason); the footer is the natural conclusion, not a separate surface.
