@@ -108,7 +108,7 @@ const STYLES = `
 
   .bandola-wrap {
     width: 100%;
-    max-width: 680px;
+    max-width: 600px;
     margin: 0;
     display: flex;
     flex-direction: column;
