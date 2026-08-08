@@ -12,7 +12,7 @@
  * Defaults: Re mayor (D major), the most common scale in joropo.
  */
 export type Key = "do" | "re" | "mi" | "fa" | "sol" | "la" | "si";
-export type Mode = "mayor" | "menor" | "armonica";
+export type Mode = "mayor" | "menor" | "armonica" | "cromatica";
 export type ScaleId = `${Key}-${Mode}`;
 
 export interface Scale {
@@ -39,16 +39,24 @@ const MODE_INTERVALS: Record<Mode, number[]> = {
   mayor: [0, 2, 4, 5, 7, 9, 11],
   menor: [0, 2, 3, 5, 7, 8, 10],
   armonica: [0, 2, 3, 5, 7, 8, 11],
+  // The chromatic scale covers all 12 semitones of the octave. The
+  // tonic is still the first interval (0) so the scale reads "C
+  // cromática", "D♯ cromática", etc. — but since every PC is
+  // included, the actual pitch-class set is identical for every key
+  // (0..11). The label still names the key so the player can read the
+  // absolute pitch of any note from the standard MIDI mapping.
+  cromatica: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
 };
 
 const MODE_LABEL: Record<Mode, string> = {
   mayor: "mayor",
   menor: "menor",
   armonica: "armónica",
+  cromatica: "cromática",
 };
 
 const ALL_KEYS: Key[] = ["do", "re", "mi", "fa", "sol", "la", "si"];
-const ALL_MODES: Mode[] = ["mayor", "menor", "armonica"];
+const ALL_MODES: Mode[] = ["mayor", "menor", "armonica", "cromatica"];
 
 export const SCALES: Scale[] = ALL_KEYS.flatMap((key) =>
   ALL_MODES.map((mode) => ({

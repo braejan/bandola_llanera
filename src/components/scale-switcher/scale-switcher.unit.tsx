@@ -143,15 +143,15 @@ describe("ScaleSwitcher — key selector (Refactor)", () => {
 });
 
 describe("ScaleSwitcher — mode selector", () => {
-  it("renders 3 mode buttons in the order Mayor, Menor, Armónica", async () => {
+  it("renders 4 mode buttons in the order Mayor, Menor, Armónica, Cromática", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
     const modes = Array.from(
       screen.querySelectorAll(".modes button[data-mode]"),
     );
-    expect(modes.length).toBe(3);
+    expect(modes.length).toBe(4);
     const labels = modes.map((m) => m.textContent?.trim());
-    expect(labels).toEqual(["mayor", "menor", "armónica"]);
+    expect(labels).toEqual(["mayor", "menor", "armónica", "cromática"]);
   });
 
   it("Mayor is checked by default", async () => {
@@ -161,19 +161,21 @@ describe("ScaleSwitcher — mode selector", () => {
     expect(mayor?.getAttribute("aria-checked")).toBe("true");
   });
 
-  it("Menor and Armónica are unchecked by default", async () => {
+  it("Menor, Armónica and Cromática are unchecked by default", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
     const menor = screen.querySelector('button[data-mode="menor"]');
     const armonica = screen.querySelector('button[data-mode="armonica"]');
+    const cromatica = screen.querySelector('button[data-mode="cromatica"]');
     expect(menor?.getAttribute("aria-checked")).toBe("false");
     expect(armonica?.getAttribute("aria-checked")).toBe("false");
+    expect(cromatica?.getAttribute("aria-checked")).toBe("false");
   });
 
   it("every mode button carries role=\"radio\"", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
-    for (const mode of ["mayor", "menor", "armonica"]) {
+    for (const mode of ["mayor", "menor", "armonica", "cromatica"]) {
       const btn = screen.querySelector(`button[data-mode="${mode}"]`);
       expect(btn?.getAttribute("role")).toBe("radio");
     }
@@ -210,7 +212,7 @@ describe("ScaleSwitcher — click-driven mode switch (WARNING-1)", () => {
   it("every mode button can be clicked without throwing", async () => {
     const { screen, render } = await createDOM();
     await render(<ScaleSwitcher />);
-    for (const mode of ["mayor", "menor", "armonica"]) {
+    for (const mode of ["mayor", "menor", "armonica", "cromatica"]) {
       const btn = screen.querySelector(
         `button[data-mode="${mode}"]`,
       ) as HTMLButtonElement | null;

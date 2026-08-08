@@ -148,6 +148,17 @@ describe("Diapason — scale binding", () => {
     expect(screen.querySelectorAll("button").length).toBe(36);
   });
 
+  it("re-cromatica marks every fret as in-scale (all 12 semitones)", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-cromatica" />);
+    // 4 strings × 8 frets = 32 fret cells, all in scale.
+    const inScale = screen.querySelectorAll(".fret--in-scale");
+    expect(inScale.length).toBe(32);
+    // 4 open strings, all in scale.
+    const headstocks = screen.querySelectorAll(".diapason-headstock-cell.fret--preferred");
+    expect(headstocks.length).toBe(4);
+  });
+
   it("do-mayor (a different key) renders 36 buttons with the new scale", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness scaleId="do-mayor" />);
