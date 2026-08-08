@@ -1,0 +1,128 @@
+/* ==========================================================================
+   Tokens
+   ========================================================================== */
+
+:root {
+  /* Palette — saturated folk-modern llanero identity */
+  --color-ground: #b7410e;        /* Deep terracotta — dominant ground of the poster */
+  --color-accent: #e8a33d;        /* Warm marigold — scale/highlight marker */
+  --color-ink: #1a1410;           /* Near-black — bandola silhouette, printed lines */
+  --color-paper: #f5ebd8;         /* Off-white paper — diapason interior, switcher surface */
+
+  /* Derived */
+  --color-paper-tint: #efe1c6;    /* Paper, dimmed for secondary text on paper */
+  --color-ink-tint: #4a3d34;      /* Ink, dimmed for secondary text on terracotta */
+  --color-ink-on-paper: #2b211a;  /* Ink, slightly lifted from --color-ink on paper */
+  --color-digitation: #c0392b;    /* Functional — scale circles + fingering numerals only. Never decorative. */
+
+  /* Type */
+  --font-display: "Rye", "Alfa Slab One", "Georgia", serif;
+  --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+
+  /* Type scale (clamp() for responsive headlines) */
+  --fs-display: clamp(1.85rem, 2.4vw + 0.6rem, 3rem);
+  --fs-mode: clamp(1.5rem, 1.6vw + 0.7rem, 2.25rem);
+  --fs-cta: clamp(1.25rem, 1.2vw + 0.5rem, 1.85rem);
+  --fs-label: 0.8125rem;
+  --fs-note: 0.875rem;
+  --fs-heritage: clamp(0.85rem, 0.4vw + 0.65rem, 1.05rem);
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 5rem;
+  --space-10: 6rem;
+
+  /* Frame — printed, not a card */
+  --frame-border: 2px solid var(--color-ink);
+  --frame-inset: 6px;
+}
+
+/* ==========================================================================
+   Reset & base
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: var(--color-ground);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+  /* The poster is the page — no scroll past the first viewport. */
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Visible focus — 2px accent outline with 2px offset */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Honor reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Fonts (self-loaded from Google Fonts via <link> in head)
+   ========================================================================== */
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.font-body {
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0;
+}

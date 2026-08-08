@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "name": "La Bandola Llanera",
+  "short_name": "Bandola Llanera",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#b7410e",
+  "theme_color": "#b7410e",
+  "description": "Aprende los fundamentos de la bandola llanera ancestral."
+}
