@@ -1,11 +1,13 @@
 import {
   component$,
+  useContextProvider,
   useSignal,
   useStylesScoped$,
   $,
   type QRL,
 } from "@builder.io/qwik";
 import { Diapason } from "../diapason/diapason";
+import { AudioStatusContext } from "../../audio/audio-status-context";
 
 export type Mode = "mayor" | "menor" | "armonica";
 
@@ -26,33 +28,39 @@ interface ScaleSwitcherProps {
 
 /**
  * ScaleSwitcher — owns the current scale mode (Mayor / Menor / Armónica)
- * and passes it to the Diapason. Includes the audio placeholder toggle.
+ * and passes it to the Diapason.
  *
- * The mode words are wood-type. The active mode is rendered in the dominant
- * ground color (terracotta). Inactive modes are ink. A faint ink rule reveals
- * on hover/focus.
+ * Visual order is the radio header above the Diapason, then a paper
+ * controls frame that hosts the visible "sonido sintetizado (simulación)"
+ * label and a Spanish status node for the audio module. The legacy
+ * placeholder audio toggle and `<audio data-placeholder="true">` element
+ * are removed — the per-note buttons in the Diapason replace them.
+ *
+ * The mode words are wood-type. The active mode is rendered in the
+ * dominant ground color (terracotta). Inactive modes are ink. A faint
+ * ink rule reveals on hover/focus.
  */
 export const ScaleSwitcher = component$<ScaleSwitcherProps>(() => {
   useStylesScoped$(STYLES);
 
   const mode = useSignal<Mode>("mayor");
-  const audioOn = useSignal(false);
+  const audioStatus = useSignal<string>("");
+
+  // Provide the audio-status signal so the Diapason (which owns the
+  // click handler that calls playMidiNote) can write the rejected
+  // status into it. The visible <p role="status"> below reads the
+  // same signal (WARNING-4).
+  useContextProvider(AudioStatusContext, audioStatus);
 
   const setMode = $((next: Mode) => {
     mode.value = next;
   });
 
-  const toggleAudio = $(() => {
-    audioOn.value = !audioOn.value;
-  });
-
   return (
     <section
       class="scale-switcher"
-      aria-label="Selector de escala y audio de muestra"
+      aria-label="Selector de escala y estado de audio"
     >
-      <Diapason mode={mode.value} />
-
       <div class="controls-frame">
         <div class="controls">
           <div
@@ -79,24 +87,22 @@ export const ScaleSwitcher = component$<ScaleSwitcherProps>(() => {
             })}
           </div>
 
-          <button
-            type="button"
-            class={["audio", audioOn.value ? "audio--on" : ""].join(" ")}
-            aria-label="Reproducir audio de muestra (placeholder)"
-            aria-pressed={audioOn.value}
-            onClick$={toggleAudio}
+          <p class="synthesis-label" aria-label="Sonido sintetizado">
+            sonido sintetizado (simulación)
+          </p>
+
+          <p
+            class="audio-status"
+            role="status"
+            aria-live="polite"
+            data-audio-status={audioStatus.value ? "active" : "idle"}
           >
-            <span class="audio-dot" aria-hidden="true" />
-            <span class="audio-label">Audio de muestra (placeholder)</span>
-          </button>
+            {audioStatus.value}
+          </p>
         </div>
       </div>
 
-      {/* Empty placeholder audio element — no src, no fabricated recording. */}
-      <audio
-        data-placeholder="true"
-        aria-hidden="true"
-      />
+      <Diapason mode={mode.value} />
     </section>
   );
 });
@@ -210,6 +216,38 @@ const STYLES = `
     height: 7px;
     border-radius: 50%;
     background: currentColor;
+  }
+
+  /* Visible "sonido sintetizado (simulación)" label — render-only label
+     that makes the synthesized provenance explicit. No interaction. */
+  .synthesis-label {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-tint);
+    text-align: center;
+  }
+
+  /* Spanish status node — driven by the audio module's reject callback.
+     Empty when audio is available; "Audio no disponible. Toca una nota
+     para intentarlo de nuevo." when the user gesture was rejected. */
+  .audio-status {
+    margin: 0;
+    min-height: 1.4em;
+    font-family: var(--font-body);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    color: var(--color-ink);
+    text-align: center;
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+  }
+
+  .audio-status[data-audio-status="active"] {
+    opacity: 1;
   }
 
   /* On the narrowest viewports the controls column-stack. */

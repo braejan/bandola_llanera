@@ -1,0 +1,250 @@
+/**
+ * Strict TDD — schedule, debounce, lifecycle, and the await-on-resume
+ * contract for playMidiNote.
+ *
+ * Pure mapping tests live in `midi-to-frequency.unit.ts` (split for the
+ * spec's "at least 8 unit files" target — WARNING-7).
+ *
+ * Tests:
+ *   - playMidiNote returns null when window is undefined (SSR guard)
+ *   - playMidiNote returns null when the AudioContext cannot be created
+ *   - Two different pitches schedule two distinct voices
+ *   - The 9→10th trigger evicts the oldest voice (8 remain)
+ *   - Same-target debounce drops the second trigger within 40 ms
+ *   - **resume() is awaited before schedule** (spec S3.5; WARNING-3)
+ *   - Resumed context transitions to running
+ *   - Rejected context returns null and surfaces the Spanish status
+ *   - VoiceManager exposes MAX=8 as a static constant
+ */
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  AUDIO_UNAVAILABLE_MESSAGE,
+  VoiceManager,
+  getAudioContext,
+  playMidiNote,
+  __resetAudioModuleForTests,
+} from "./play-midi-note";
+
+describe("playMidiNote — async + lifecycle", () => {
+  beforeEach(() => {
+    __resetAudioModuleForTests();
+  });
+  afterEach(() => {
+    __resetAudioModuleForTests();
+  });
+
+  it("returns null when window is undefined (SSR guard)", async () => {
+    const originalWindow = globalThis.window;
+    const originalAudioContext = globalThis.AudioContext;
+    // @ts-expect-error — testing SSR guard
+    delete globalThis.window;
+    // @ts-expect-error — full SSR: no AudioContext either
+    delete globalThis.AudioContext;
+    try {
+      const voice = await playMidiNote(57);
+      expect(voice).toBeNull();
+    } finally {
+      globalThis.window = originalWindow;
+      globalThis.AudioContext = originalAudioContext;
+    }
+  });
+
+  it("returns null when the AudioContext cannot be created", async () => {
+    const original = globalThis.AudioContext;
+    // @ts-expect-error — explicit failure mode
+    globalThis.AudioContext = undefined;
+    const voice = await playMidiNote(57);
+    expect(voice).toBeNull();
+    globalThis.AudioContext = original;
+  });
+
+  it("schedules a real Voice for each call", async () => {
+    const v1 = await playMidiNote(57);
+    const v2 = await playMidiNote(69);
+    expect(v1).not.toBeNull();
+    expect(v2).not.toBeNull();
+    expect(v1!.id).not.toBe(v2!.id);
+  });
+
+  it("records every scheduled voice in the global registry", async () => {
+    await playMidiNote(57);
+    await playMidiNote(57);
+    await playMidiNote(69);
+    expect(globalThis.__voices.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("produces the audible frequency chain for a given MIDI note", async () => {
+    const ctx = getAudioContext()!;
+    const capturedFreqs: number[] = [];
+    const original = ctx.createOscillator.bind(ctx);
+    ctx.createOscillator = function () {
+      const osc = original();
+      const proto = Object.getPrototypeOf(osc.frequency);
+      const desc = Object.getOwnPropertyDescriptor(proto, "value");
+      if (desc && desc.set) {
+        const setter = desc.set;
+        Object.defineProperty(osc.frequency, "value", {
+          configurable: true,
+          get() {
+            return desc.get?.call(osc.frequency);
+          },
+          set(v: number) {
+            capturedFreqs.push(v);
+            setter.call(osc.frequency, v);
+          },
+        });
+      }
+      return osc;
+    };
+    await playMidiNote(57);
+    expect(capturedFreqs).toContain(220);
+    expect(capturedFreqs).toContain(440);
+    expect(capturedFreqs).toContain(660);
+  });
+
+  it("transitions a suspended context to running", async () => {
+    const ctx = getAudioContext()!;
+    // @ts-expect-error — web-audio-test-api internal mutable state
+    ctx._.state = "suspended";
+    expect(ctx.state).toBe("suspended");
+    await playMidiNote(57);
+    expect(ctx.state).toBe("running");
+  });
+
+  it("schedules a note only after resume() has resolved (spec S3.5)", async () => {
+    // WARNING-3 regression: the OLD code did ctx.resume().catch(...) and
+    // then scheduled the note synchronously. The new contract awaits
+    // resume() — schedule may not happen until the promise resolves.
+    const ctx = getAudioContext()!;
+    // @ts-expect-error — web-audio-test-api internal mutable state
+    ctx._.state = "suspended";
+
+    let resolveResume: () => void = () => undefined;
+    let resumePromise: Promise<void> = new Promise<void>((resolve) => {
+      resolveResume = resolve;
+    });
+    const originalResume = ctx.resume.bind(ctx);
+    ctx.resume = () => {
+      // Promise intentionally not yet resolved.
+      return resumePromise;
+    };
+
+    // Kick off playMidiNote. It must wait for resume() to resolve before
+    // scheduling the note.
+    const voicePromise = playMidiNote(57);
+
+    // Yield to the microtask queue so the function reaches the await.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // The promise has not yet resolved, so no voice may have been
+    // scheduled. The global registry should still be empty.
+    expect(globalThis.__voices.length).toBe(0);
+
+    // Now resolve the resume.
+    resolveResume();
+    resumePromise = Promise.resolve();
+
+    const voice = await voicePromise;
+    expect(voice).not.toBeNull();
+    expect(globalThis.__voices.length).toBe(1);
+
+    // Restore the original resume so other tests are not affected.
+    ctx.resume = originalResume;
+  });
+
+  it("surfaces the Spanish status when the context is missing", async () => {
+    const original = globalThis.AudioContext;
+    // @ts-expect-error — explicit failure mode
+    globalThis.AudioContext = undefined;
+    const voice = await playMidiNote(57, { onStatus: () => undefined });
+    expect(voice).toBeNull();
+    expect(globalThis.__audio.rejects).not.toBeNull();
+    expect(globalThis.__audio.rejects?.message).toBe(AUDIO_UNAVAILABLE_MESSAGE);
+    globalThis.AudioContext = original;
+  });
+
+  it("surfaces the Spanish status when resume() rejects", async () => {
+    const ctx = getAudioContext()!;
+    // @ts-expect-error — web-audio-test-api internal mutable state
+    ctx._.state = "suspended";
+    const originalResume = ctx.resume.bind(ctx);
+    ctx.resume = () => Promise.reject(new Error("denied by user"));
+
+    let status = "";
+    const voice = await playMidiNote(57, {
+      onStatus: (msg) => {
+        status = msg;
+      },
+    });
+    expect(voice).toBeNull();
+    expect(status).toBe(AUDIO_UNAVAILABLE_MESSAGE);
+    expect(globalThis.__audio.rejects?.message).toBe("denied by user");
+
+    ctx.resume = originalResume;
+  });
+});
+
+describe("VoiceManager — polyphony cap", () => {
+  beforeEach(() => {
+    __resetAudioModuleForTests();
+  });
+  afterEach(() => {
+    __resetAudioModuleForTests();
+  });
+
+  it("exposes MAX=8 as a static constant", () => {
+    expect(VoiceManager.MAX).toBe(8);
+  });
+
+  it("evicts the oldest voice when a 10th trigger fires", () => {
+    const ctx = getAudioContext()!;
+    const manager = new VoiceManager(ctx);
+    const ids: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      const voice = manager.schedule(57 + i);
+      if (voice) ids.push(voice.id);
+    }
+    expect(manager.activeCount).toBe(8);
+    expect(ids.length).toBe(10);
+    expect(manager.activeIds).toEqual(ids.slice(2));
+  });
+
+  it("never grows above MAX active voices", () => {
+    const ctx = getAudioContext()!;
+    const manager = new VoiceManager(ctx);
+    for (let i = 0; i < 30; i++) manager.schedule(60 + (i % 12));
+    expect(manager.activeCount).toBe(8);
+  });
+});
+
+describe("Same-target debounce", () => {
+  beforeEach(() => {
+    __resetAudioModuleForTests();
+  });
+  afterEach(() => {
+    __resetAudioModuleForTests();
+  });
+
+  it("drops a second trigger fired within 40 ms on the same target", async () => {
+    const v1 = await playMidiNote(57, { targetId: "A3-0" });
+    const v2 = await playMidiNote(57, { targetId: "A3-0" });
+    expect(v1).not.toBeNull();
+    expect(v2).toBeNull();
+  });
+
+  it("admits a second trigger after the debounce map is reset", async () => {
+    const v1 = await playMidiNote(57, { targetId: "A3-0" });
+    expect(v1).not.toBeNull();
+    __resetAudioModuleForTests();
+    const v2 = await playMidiNote(57, { targetId: "A3-0" });
+    expect(v2).not.toBeNull();
+  });
+
+  it("admits a different target even right after another", async () => {
+    const v1 = await playMidiNote(57, { targetId: "A3-0" });
+    const v2 = await playMidiNote(57, { targetId: "A4-0" });
+    expect(v1).not.toBeNull();
+    expect(v2).not.toBeNull();
+  });
+});

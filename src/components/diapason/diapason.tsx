@@ -1,5 +1,7 @@
-import { component$, useStylesScoped$ } from "@builder.io/qwik";
+import { component$, useContext, useStylesScoped$, $ } from "@builder.io/qwik";
 import type { Mode } from "../scale-switcher/scale-switcher";
+import { playMidiNote } from "../../audio/play-midi-note";
+import { AudioStatusContext } from "../../audio/audio-status-context";
 
 /**
  * Diapason — the interactive fretboard of the bandola llanera.
@@ -104,6 +106,34 @@ export const Diapason = component$<DiapasonProps>(({ mode }) => {
   const activeScaleLabel = scaleNames.join(" – ");
   const activeModeLabel = MODE_LABEL[mode];
 
+  // The audio-status signal is provided by the ScaleSwitcher. We use
+  // it to forward the audio module's onStatus callback (rejected
+  // context, etc.) to the visible <p role="status"> in the controls
+  // frame (WARNING-4).
+  const audioStatus = useContext(AudioStatusContext);
+
+  /**
+   * Play the note for the clicked fret/open cell. The `data-midi`,
+   * `data-string`, and `data-fret` attributes encode the target. We
+   * route through `playMidiNote` so the audio module keeps its 40 ms
+   * same-target debounce, 8-voice cap, and the await ctx.resume()
+   * contract — so the note schedules only after the AudioContext is
+   * running (spec scenario S3.5).
+   */
+  const handlePlay = $(async (_event: Event, el: HTMLElement) => {
+    const midi = Number(el.dataset.midi);
+    const stringId = el.dataset.string ?? "";
+    const fret = el.dataset.fret ?? "";
+    if (Number.isFinite(midi)) {
+      await playMidiNote(midi, {
+        targetId: `${stringId}-${fret}`,
+        onStatus: (msg) => {
+          audioStatus.value = msg;
+        },
+      });
+    }
+  });
+
   return (
     <figure
       class="diapason"
@@ -117,6 +147,26 @@ export const Diapason = component$<DiapasonProps>(({ mode }) => {
               class={`diapason-string ${s.rowClass}`}
               key={`str-${s.open}`}
             >
+              {/*
+                DOM order: headstock first so the open-string target is
+                the first keyboard-focusable cell in each row, matching
+                the spec's tab order (S6.1). CSS `order: 1` on the
+                headstock keeps it visually on the right, so the printed
+                fretboard still reads left-to-right with the cejilla
+                against the nut.
+              */}
+              <button
+                type="button"
+                class="diapason-headstock-cell fret fret--open"
+                key={`open-${s.open}`}
+                data-midi={String(s.midi)}
+                data-string={s.open}
+                data-fret="0"
+                aria-label={`Cuerda abierta ${s.open}, MIDI ${s.midi}`}
+                onClick$={handlePlay}
+              >
+                <span class="headstock-label">{s.open}</span>
+              </button>
               {FRET_COLUMNS.map((fret) => {
                 const note = s.frets[fret];
                 const inScale = scale.includes(note.pc);
@@ -129,15 +179,22 @@ export const Diapason = component$<DiapasonProps>(({ mode }) => {
                 ]
                   .filter(Boolean)
                   .join(" ");
+                const ariaLabel = `Nota ${note.name}, MIDI ${note.midi}, ${s.open}, traste ${fret}`;
                 return (
-                  <div class={cls} key={`fret-${s.open}-${fret}`}>
+                  <button
+                    type="button"
+                    class={cls}
+                    key={`fret-${s.open}-${fret}`}
+                    data-midi={String(note.midi)}
+                    data-string={s.open}
+                    data-fret={String(fret)}
+                    aria-label={ariaLabel}
+                    onClick$={handlePlay}
+                  >
                     <span class="fret-note">{note.name}</span>
-                  </div>
+                  </button>
                 );
               })}
-              <div class="diapason-headstock-cell" key={`open-${s.open}`}>
-                <span class="headstock-label">{s.open}</span>
-              </div>
             </div>
           ))}
         </div>
@@ -230,7 +287,9 @@ const STYLES = `
      right border on cells that are NOT the last fret cell — that
      right border is the traste (the metal fret bar) that separates
      this playing position from the next. Fret 0 has no right border
-     because the nut (headstock's left border) is its right separator. */
+     because the nut (headstock's left border) is its right separator.
+     The base element is a <button> so it is keyboard-activatable; the
+     border is reset so the printed-frame grid stays intact. */
   .fret {
     position: relative;
     display: flex;
@@ -240,11 +299,24 @@ const STYLES = `
     color: var(--color-ink-tint);
     background: transparent;
     border: 1px solid transparent;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
     transition:
       background-color 320ms ease-out,
       border-color 320ms ease-out,
       color 320ms ease-out;
     min-width: 0;
+  }
+
+  /* Fret 0 (open string) — a hollow digitation-red ring spanning the
+     full string width at the nut. The activation marker is the ring
+     itself; the note label sits centered on the string. */
+  .fret--open {
+    border: 2px solid var(--color-digitation);
+    background: transparent;
+    height: var(--string-thickness, 2px);
+    color: var(--color-ink);
   }
 
   /* Trastes — the 7 vertical metal fret bars, drawn as right borders on
@@ -305,8 +377,16 @@ const STYLES = `
      and the red circle. No extra cell marker — the nut + the circle
      carry the tonic semantic on a real instrument. */
 
-  /* Headstock cell — the nut (left border) and the open-string label.
-     No explicit background so the frame's paper shows through. */
+  /* Headstock cell — the nut (left border) and the open-string button.
+     Renders as a hollow digitation-red ring spanning the full string
+     width at the nut. The activation marker is the ring itself; the
+     string label sits centered on the string.
+
+     DOM order: FIRST in each row (so the open-string target is the
+     first keyboard-focusable cell of the row, matching spec S6.1).
+     Visual order: LAST in each row (so the printed fretboard reads
+     left-to-right with the cejilla on the right). The CSS order
+     property fires the visual reorder without touching the DOM. */
   .diapason-headstock-cell {
     display: flex;
     align-items: center;
@@ -316,9 +396,13 @@ const STYLES = `
     letter-spacing: 0.04em;
     color: var(--color-ink);
     line-height: 1;
-    border-left: 2px solid var(--color-ink);
-    padding-left: 4px;
+    border: 2px solid var(--color-digitation);
     background: transparent;
+    padding: 0 4px;
+    height: var(--string-thickness, 2px);
+    cursor: pointer;
+    font: inherit;
+    order: 1;
   }
 
   .headstock-label {
