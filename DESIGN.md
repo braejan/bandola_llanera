@@ -94,6 +94,7 @@ The palette is saturated folk-modern, not muted editorial: a deep terracotta gro
 - The scale switcher is typography, not a control. Three wood-type words, the active one in the dominant ground.
 - The audio is a labeled placeholder. No fabricated recordings until real audio exists.
 - Spanish throughout. No English copy on any surface.
+- The student menu is the printed header of the broadsheet — a flat Rye/IBM Plex strip listing Inicio / Acordes / Camino. It is the student's stable way back; it does not become a chrome layer that competes with the poster.
 
 ## Colors
 
@@ -264,6 +265,15 @@ Reduced-motion: the existing global `@media (prefers-reduced-motion: reduce)` ru
 - **Layout:** desktop row (credit left, links center, copyright right); ≤640px column stack with the copyright centered.
 - **Rationale:** the existing "no nav bar, footer, or second viewport" rule is amended to permit a single broadsheet colophon below the poster. The poster already scrolls past the fold (12-tone key selector + linear scale reference + playable diapason); the footer is the natural conclusion, not a separate surface.
 
+### StudentMenu (persistent header strip)
+- **Shape:** paper background, 2px solid ink border-bottom only, square corners, no shadow, no gradient — the same printed-band grammar as the Footer, but printed over the TOP of the poster instead of under it.
+- **Typography:** Rye (display), `letter-spacing: 0.02em`, matching the CTA's wood-type voice.
+- **Content:** exactly three items, fixed order — `Inicio` (`/`), `Acordes` (`/acordes`), `Camino` (`/camino`) — each a Qwik City `<Link>`.
+- **Active state:** the item whose route matches the current pathname gets `aria-current="page"` and the active visual treatment (ground-color border-bottom accent); non-active items carry no `aria-current` attribute at all.
+- **Layout:** single row at every viewport; wraps onto a second line at `≤640px` instead of collapsing into a hamburger or drawer — the strip is never hidden.
+- **Placement:** rendered in `src/routes/layout.tsx` BEFORE `<Slot />`, so it is a DOM sibling of every route's `<main>`, never a descendant — it is the header of the broadsheet, not a second viewport of the poster.
+- **Rationale:** the existing "no nav bar, footer, or second viewport" rule is amended a second time (after the Footer) to permit this persistent strip. It gives the student a stable way back to Inicio/Acordes/Camino without becoming a chrome layer that competes with the poster.
+
 ### Tuning-Check button
 - **Shape:** paper background, 1px ink border, square corners, no shadow. Same CTA-paper grammar scaled to the label.
 - **Typography:** IBM Plex Sans 500, 0.8125rem, letter-spacing 0.08em, uppercase.
@@ -309,7 +319,7 @@ Reduced-motion: the existing global `@media (prefers-reduced-motion: reduce)` ru
 - **Do** use the 2px ink border as the only depth device. No shadows.
 
 ### Don't:
-- **Don't** add a nav bar, marketing footer, or card grid. A single broadsheet credits footer may sit below the poster as a printed colophon — see Footer component.
+- **Don't** add a nav bar, marketing footer, or card grid. Two documented exceptions are permitted: a single broadsheet credits footer below the poster (see Footer component) and a persistent student-menu strip above the poster (see StudentMenu component). Both are rendered in the same paper-on-ink grammar — flat, square corners, 2px ink border, no shadow — and read as printed bands of the same broadsheet, not as chrome.
 - **Don't** introduce a fifth color. The four-color palette is the system.
 - **Don't** use a system display face (Impact, Arial Black, platform sans) as the display voice.
 - **Don't** use a soft shadow, gradient, or glow on any surface. The world is flat and printed.
