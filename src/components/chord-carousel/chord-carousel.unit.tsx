@@ -5,7 +5,7 @@
  * how the /acordes route will own it) and updates it from
  * `onNavigate$`, so assertions can check BOTH what the component
  * requested (the navigate log) and what the DOM shows once the parent
- * applies that request (transform, aria-hidden, aria-selected).
+ * applies that request (transform, inert, aria-selected).
  */
 import { $, component$, useContextProvider, useSignal } from "@builder.io/qwik";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -67,13 +67,23 @@ describe("ChordCarousel — renders all 3 slides, one active", () => {
     expect(screen.querySelectorAll(".chord-carousel__tick").length).toBe(3);
   });
 
-  it("only the active slide is not aria-hidden, and its tick is aria-selected", async () => {
+  it("only the active slide is not inert, and its tick is aria-selected", async () => {
+    // Deliberately just `inert`, not `aria-hidden` too: per spec
+    // `inert` already removes an element from both the tab order and
+    // the accessibility tree, and empirically, having BOTH as
+    // reactive conditional props on the same element broke Qwik's
+    // DOM diffing for one of them after the first update (confirmed
+    // live against the dev server — see chord-carousel.tsx's comment
+    // at the slide's `inert` prop for the full story). happy-dom (the
+    // test DOM) doesn't reflect the `inert` IDL property yet, so this
+    // asserts on the attribute directly — the same thing a real
+    // browser reads to apply the non-focusable/hidden-from-AT effect.
     const { screen, render } = await createDOM();
     await render(<TestHarness initialIndex={1} />);
     const slides = Array.from(screen.querySelectorAll(".chord-carousel__slide"));
-    expect(slides[0].getAttribute("aria-hidden")).toBe("true");
-    expect(slides[1].getAttribute("aria-hidden")).toBeNull();
-    expect(slides[2].getAttribute("aria-hidden")).toBe("true");
+    expect(slides[0].getAttribute("inert")).not.toBeNull();
+    expect(slides[1].getAttribute("inert")).toBeNull();
+    expect(slides[2].getAttribute("inert")).not.toBeNull();
 
     const ticks = Array.from(screen.querySelectorAll(".chord-carousel__tick"));
     expect(ticks[0].getAttribute("aria-selected")).toBe("false");
@@ -158,6 +168,35 @@ describe("ChordCarousel — chevron navigation wraps", () => {
     expect(
       screen.querySelector('[data-testid="active-index"]')?.textContent,
     ).toBe("2");
+  });
+
+  it("re-renders inert correctly on EVERY slide after navigation, not just on first render", async () => {
+    // The bug this guards against only showed up on a re-render, not
+    // the initial one: a plain single-render assertion (initialIndex
+    // set once, never navigated) would have passed even with the
+    // regression live in chord-carousel.tsx — inert got stuck "on"
+    // for every slide after the first click, confirmed against the
+    // real dev server. This test must navigate at least once before
+    // asserting.
+    const { screen, render, userEvent } = await createDOM();
+    await render(<TestHarness initialIndex={0} />);
+    const next = screen.querySelector(
+      ".chord-carousel__nav--next",
+    ) as HTMLElement;
+    await userEvent(next, "click");
+
+    const slides = Array.from(screen.querySelectorAll(".chord-carousel__slide"));
+    expect(slides[0].getAttribute("inert")).not.toBeNull();
+    expect(slides[1].getAttribute("inert")).toBeNull();
+    expect(slides[2].getAttribute("inert")).not.toBeNull();
+
+    await userEvent(next, "click");
+    const slidesAfterSecondClick = Array.from(
+      screen.querySelectorAll(".chord-carousel__slide"),
+    );
+    expect(slidesAfterSecondClick[0].getAttribute("inert")).not.toBeNull();
+    expect(slidesAfterSecondClick[1].getAttribute("inert")).not.toBeNull();
+    expect(slidesAfterSecondClick[2].getAttribute("inert")).toBeNull();
   });
 });
 

@@ -83,7 +83,22 @@ export const ChordCarousel = component$<ChordCarouselProps>(
     const goTo = $((index: number) => {
       const n = chords.length;
       const wrapped = ((index % n) + n) % n;
-      if (wrapped !== activeIndex) void onNavigate$(wrapped);
+      if (wrapped === activeIndex) return;
+      // `inert` prevents NEW focus from entering an inactive slide,
+      // but per spec it does not retroactively blur an element that
+      // was already focused before its ancestor became inert
+      // (confirmed against a plain, non-Qwik element — not specific
+      // to this app). Since inert already guarantees any currently
+      // focused descendant of the track belongs to the slide we're
+      // about to navigate AWAY from, blur it here so a keyboard user
+      // who tabbed into the fretboard doesn't end up with focus stuck
+      // on a hidden, inert control after the slide changes.
+      const clip = trackClipRef.value;
+      const active = clip?.ownerDocument?.activeElement;
+      if (active instanceof HTMLElement && clip?.contains(active)) {
+        active.blur();
+      }
+      void onNavigate$(wrapped);
     });
 
     const onPointerDown$ = $((event: PointerEvent) => {
@@ -185,7 +200,22 @@ export const ChordCarousel = component$<ChordCarouselProps>(
                 <div
                   class="chord-carousel__slide"
                   key={chord.id}
-                  aria-hidden={i === activeIndex ? undefined : "true"}
+                  // All 3 slides stay mounted (the transform is what
+                  // moves the active one into view), so an inactive
+                  // slide's own play button / fret cells are still
+                  // real, focusable elements unless told otherwise.
+                  // `inert` (not `aria-hidden`) is the single source
+                  // of truth here: per spec it already removes the
+                  // subtree from the accessibility tree AND the tab
+                  // order, so a separate `aria-hidden` is redundant —
+                  // and, empirically, having BOTH as reactive
+                  // conditional props on the same element breaks
+                  // Qwik's DOM diffing for one of them after the
+                  // first update (confirmed live: aria-hidden froze
+                  // at "true" for every slide once inert was added
+                  // alongside it). One reactive boolean prop per
+                  // element, not two racing ones.
+                  inert={i === activeIndex ? false : true}
                 >
                   <p class="chord-carousel__role">{ROLE_LABEL[chord.role]}</p>
                   <h2 class="chord-carousel__chord-name font-display">
