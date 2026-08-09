@@ -66,7 +66,13 @@ interface ChordFretboardProps {
 const STRING_ORDER: readonly StringId[] = ["A3", "D4", "A4", "E5"];
 
 // Fret 7 (high, body end) on the left, fret 0 (open string, nut) on
-// the right — matches Diapason's FRET_COLUMNS exactly.
+// the right — matches Diapason's FRET_COLUMNS. The role-based
+// transposition formula in `music/chords.ts` can land a voicing
+// anywhere in 0..11 for tonos far from Re; showing only the first 7
+// frets is a deliberate, temporary scope cut (not every generated
+// voicing is fully visible yet) traded for a simple, non-scrolling
+// board at every screen size. A dot beyond fret 7 just doesn't
+// render — no cell exists for it.
 const FRET_COLUMNS = [7, 6, 5, 4, 3, 2, 1, 0] as const;
 
 const OPEN_MIDI: Record<StringId, number> = {
@@ -76,7 +82,7 @@ const OPEN_MIDI: Record<StringId, number> = {
   E5: 76,
 };
 
-/** Generic per-pitch-class label (visible cell text), all 32 cells. */
+/** Generic per-pitch-class label (visible cell text), all 12 pitch classes. */
 const PC_NAMES = [
   "Do",
   "Do♯",
@@ -93,28 +99,26 @@ const PC_NAMES = [
 ];
 
 /**
- * LOCKED Spanish solfège names for the aria-label of PLAYABLE cells
- * (REQ-FRET-008). A closed lookup, not a generic enharmonic-spelling
- * algorithm: the 5 chord voicings only ever produce these 12 distinct
- * MIDI values, and the spec locks specific enharmonic spellings per
- * musical context (e.g. midi 70/58 are "Si bemol", not "La sostenido",
- * as the minor third of Re menor / Sol menor) that a generic
- * sharp-only table cannot represent.
+ * Same 12 pitch classes, spelled out for the aria-label (a screen
+ * reader has no reliable pronunciation for the "♯" glyph, so the
+ * accessible name spells "sostenido" instead of reusing PC_NAMES).
+ * Sharp-only, matching the rest of the app's convention (`scales.ts`'s
+ * `KEY_DATA` — no flats).
  */
-const NOTE_NAME_BY_MIDI: Readonly<Record<number, string>> = {
-  57: "La",
-  58: "Si bemol",
-  59: "Si",
-  62: "Re",
-  64: "Mi",
-  69: "La",
-  70: "Si bemol",
-  71: "Si",
-  73: "Do sostenido",
-  77: "Fa",
-  78: "Fa sostenido",
-  79: "Sol",
-};
+const PC_NAMES_SPOKEN = [
+  "Do",
+  "Do sostenido",
+  "Re",
+  "Re sostenido",
+  "Mi",
+  "Fa",
+  "Fa sostenido",
+  "Sol",
+  "Sol sostenido",
+  "La",
+  "La sostenido",
+  "Si",
+];
 
 const FLASH_MS = 400;
 
@@ -134,6 +138,27 @@ function flash(el: HTMLElement): void {
   setTimeout(() => {
     el.classList.remove("chord-fret--playing");
   }, FLASH_MS);
+}
+
+/**
+ * A solid play triangle — the one universally-read shape for "play",
+ * so it stays filled rather than following the chevrons' stroke-only
+ * treatment. Visible only on narrow viewports, where it replaces the
+ * "Tocar {chord} completo" text label (REQ: compact touch target,
+ * not a wide text button) — see `.chord-fretboard__play-icon` /
+ * `.chord-fretboard__play-label` in STYLES.
+ */
+function PlayIcon() {
+  return (
+    <svg
+      class="chord-fretboard__play-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M7 4.5v15l13-7.5-13-7.5z" fill="currentColor" />
+    </svg>
+  );
 }
 
 export const ChordFretboard = component$<ChordFretboardProps>(
@@ -225,7 +250,8 @@ export const ChordFretboard = component$<ChordFretboardProps>(
           aria-label={buttonLabel}
           onClick$={handlePlayChord}
         >
-          {buttonLabel}
+          <PlayIcon />
+          <span class="chord-fretboard__play-label">{buttonLabel}</span>
         </button>
 
         <div
@@ -253,7 +279,7 @@ export const ChordFretboard = component$<ChordFretboardProps>(
                     .join(" ");
                   const label = playable
                     ? `Cuerda ${stringId}, traste ${fret}, nota ${
-                        NOTE_NAME_BY_MIDI[midi] ?? ""
+                        PC_NAMES_SPOKEN[midi % 12]
                       }, acorde ${chord.name}`
                     : `Cuerda ${stringId}, traste ${fret}, fuera del acorde ${chord.name}`;
                   return (
@@ -300,6 +326,10 @@ const STYLES = `
 
   .chord-fretboard__play-all {
     align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
     font-family: var(--font-body);
     font-size: var(--fs-label);
     font-weight: 500;
@@ -313,6 +343,17 @@ const STYLES = `
     transition:
       background-color var(--motion-fast) var(--ease-printed),
       color var(--motion-fast) var(--ease-printed);
+  }
+
+  /* Icon ships in the DOM at every width (a fixed SVG, never a late
+     asset fetch) but only PAINTS on narrow viewports, where it
+     replaces the wide text button with a small square touch target —
+     see the mobile block below. */
+  .chord-fretboard__play-icon {
+    display: none;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
   }
 
   .chord-fretboard__play-all:hover,
@@ -514,7 +555,47 @@ const STYLES = `
       padding: 4px;
     }
     .chord-fret-note {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    /* Taller cells, not just narrower ones: on a phone the fretboard
+       is the primary learning surface (REQ), and after the mobile
+       chrome cuts above it there is real spare vertical room to
+       spend making the neck itself bigger and easier to read. */
+    .chord-fret {
+      aspect-ratio: 1 / 1.5;
+    }
+    /* Fixed equal px, not the base rule's 78% width/height: the base
+       rule keeps a true circle only when the cell itself is roughly
+       square. Once the mobile .chord-fret aspect-ratio above makes
+       cells much taller than wide, 78% of each axis stops matching
+       and the circle stretches into an oval. */
+    .chord-fret--in-chord::before {
+      width: 34px;
+      height: 34px;
+      max-width: 34px;
+      max-height: 34px;
+    }
+
+    /* The wide "Tocar X completo" text button becomes a small square
+       icon button — same footprint as the carousel's own nav chevrons
+       — so it reads as a control, not a headline, and gives the
+       fretboard back the vertical space it was taking. */
+    .chord-fretboard__play-all {
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+    }
+    .chord-fretboard__play-icon {
+      display: block;
+    }
+    .chord-fretboard__play-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
     }
   }
 `;
