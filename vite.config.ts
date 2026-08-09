@@ -22,7 +22,10 @@ errorOnDuplicatesPkgDeps(devDependencies, dependencies);
 export default defineConfig(({ command, mode }): UserConfig => {
   return {
     plugins: [
-      qwikCity(),
+      qwikCity({
+        // GH Pages serves this repo at https://braejan.github.io/bandola_llanera/
+        basePathname: "/bandola_llanera/",
+      }),
       qwikVite({
         // Disable dev-only overlays so screenshots stay clean.
         devTools: {
