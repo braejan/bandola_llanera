@@ -1,6 +1,6 @@
 /**
  * playChord / playCircleSequence / playChordById — chord playback for
- * the joropo D circle.
+ * a joropo circle, in any of the 12 tonos.
  *
  * Mirrors `playTuningCheck`'s shape: a loop + a local, cancellable
  * `sleep(ms, signal)` + `publish({ midi, targetId })` BEFORE routing
@@ -18,7 +18,10 @@
  * subdominant, A7 A7 — over `circle`'s three chords, not a flat
  * once-through. Each chord holds for `chordDurationMs` (default
  * 1000ms — a 3/4 measure at 180 BPM: 3 quarter notes × 333ms ≈ 1000ms,
- * a real joropo's galloping pace).
+ * a real joropo's galloping pace). The chord's own `role` field
+ * (assigned at generation time in `music/chords.ts`) drives the vamp
+ * directly — no id string-matching, so this holds for all 12 tonos,
+ * not just Re.
  *
  * `AUDIO_UNAVAILABLE_MESSAGE` is imported and re-exported BY REFERENCE
  * (never redefined) so every consumer — this module, ChordFretboard,
@@ -26,7 +29,12 @@
  */
 import { playMidiNote, AUDIO_UNAVAILABLE_MESSAGE } from "./play-midi-note";
 import { publish } from "./anim-target";
-import { getChordById, type Chord, type Circle } from "../music/chords";
+import {
+  getChordById,
+  type Chord,
+  type ChordRole,
+  type Circle,
+} from "../music/chords";
 
 export { AUDIO_UNAVAILABLE_MESSAGE };
 
@@ -43,6 +51,13 @@ export interface PlayCircleSequenceOpts {
   signal?: AbortSignal;
   /** Duration of each chord's measure, in ms. Defaults to 1000 (a 3/4 joropo measure at 180 BPM). */
   chordDurationMs?: number;
+  /**
+   * Fires right before each vamp step strikes, with the chord about to
+   * sound and its index (0–7) in the 8-step vamp. Lets a UI (e.g. the
+   * chord carousel) sync its active slide to the chord actually
+   * playing.
+   */
+  onChordStart?: (chord: Chord, stepIndex: number) => void;
 }
 
 export interface PlayChordByIdOpts {
@@ -59,27 +74,22 @@ const DEFAULT_CHORD_DURATION_MS = 1000;
 /**
  * A joropo's harmonic rhythm vamps in pairs rather than walking the
  * circle once — "A7 A7, D D, G G, A7 A7" (or "A7 A7, Dm Dm, Gm Gm, A7
- * A7" in the minor circle). Expressed as roles, not raw array indices,
- * so the pattern stays correct even if `circle.chords`' own order
- * changes again later.
+ * A7" in the minor circle) — for ANY of the 12 tonos. Expressed as
+ * roles, not raw array indices, so the pattern stays correct
+ * regardless of `circle.chords`' own order. Each chord's `role` is
+ * assigned once, at generation time, in `music/chords.ts` — no id
+ * string-matching here.
  */
-type ChordRole = "dominant" | "tonic" | "subdominant";
 const JOROPO_VAMP_ROLES: readonly ChordRole[] = [
-  "dominant",
-  "dominant",
+  "dominant7",
+  "dominant7",
   "tonic",
   "tonic",
   "subdominant",
   "subdominant",
-  "dominant",
-  "dominant",
+  "dominant7",
+  "dominant7",
 ];
-
-function roleOf(chordId: string): ChordRole {
-  if (chordId === "la-con-septima") return "dominant";
-  if (chordId.startsWith("re-")) return "tonic";
-  return "subdominant";
-}
 
 /**
  * Resolves after `ms` milliseconds OR rejects immediately if the signal
@@ -145,14 +155,16 @@ export async function playCircleSequence(
   const {
     signal,
     onStatus,
+    onChordStart,
     chordDurationMs = DEFAULT_CHORD_DURATION_MS,
   } = opts;
   const chordsByRole: Record<ChordRole, Chord> = Object.fromEntries(
-    circle.chords.map((c) => [roleOf(c.id), c]),
+    circle.chords.map((c) => [c.role, c]),
   ) as Record<ChordRole, Chord>;
-  for (const role of JOROPO_VAMP_ROLES) {
+  for (let step = 0; step < JOROPO_VAMP_ROLES.length; step++) {
     if (signal?.aborted) return;
-    const chord = chordsByRole[role];
+    const chord = chordsByRole[JOROPO_VAMP_ROLES[step]];
+    onChordStart?.(chord, step);
     await playChord(
       chord.voicing.map((v) => v.midi),
       { targetIdPrefix: `chord-${chord.id}`, onStatus, signal },

@@ -8,8 +8,10 @@ import {
   ALL_MODES_LIST,
   DEFAULT_SCALE_ID,
   KEY_DATA,
+  KEY_LETTER,
   SCALES,
   getKeyLabel,
+  getKeyLetter,
   getModeLabel,
   getScaleById,
   isScaleInScale,
@@ -155,6 +157,26 @@ describe("scales — key and mode lookups", () => {
     // 1+0=1, 1+2=3, 1+3=4, 1+5=6, 1+7=8, 1+8=9, 1+10=11.
     const scale = getScaleById("do#-menor");
     expect(scale.pitchClasses).toEqual([1, 3, 4, 6, 8, 9, 11]);
+  });
+
+  it("getKeyLetter returns the conventional sharp-only letter name for every key", () => {
+    expect(getKeyLetter("do")).toBe("C");
+    expect(getKeyLetter("do#")).toBe("C♯");
+    expect(getKeyLetter("re")).toBe("D");
+    expect(getKeyLetter("re#")).toBe("D♯");
+    expect(getKeyLetter("mi")).toBe("E");
+    expect(getKeyLetter("fa")).toBe("F");
+    expect(getKeyLetter("fa#")).toBe("F♯");
+    expect(getKeyLetter("sol")).toBe("G");
+    expect(getKeyLetter("sol#")).toBe("G♯");
+    expect(getKeyLetter("la")).toBe("A");
+    expect(getKeyLetter("la#")).toBe("A♯");
+    expect(getKeyLetter("si")).toBe("B");
+  });
+
+  it("KEY_LETTER covers all 12 keys with unique letters", () => {
+    const letters = ALL_KEYS_LIST.map((k) => KEY_LETTER[k]);
+    expect(new Set(letters).size).toBe(12);
   });
 
   it("ALL_MODES_LIST contains exactly the 4 modes in pedagogical order", () => {

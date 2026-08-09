@@ -60,9 +60,9 @@ const TestHarness = component$<{ chord: Chord }>(({ chord }) => {
 
 const RE_MAYOR = getChordById("re-mayor")!;
 const LA_CON_SEPTIMA = getChordById("la-con-septima")!;
-const SOL_MAYOR = getChordById("sol-mayor")!;
+const SOL_MAYOR = getChordById("sol-mayor-cuarta")!;
 const RE_MENOR = getChordById("re-menor")!;
-const SOL_MENOR = getChordById("sol-menor")!;
+const SOL_MENOR = getChordById("sol-menor-cuarta")!;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -233,9 +233,9 @@ describe("ChordFretboard — anim-target subscribe + flash (REQ-FRET-005)", () =
 describe('ChordFretboard — "Tocar {chord.name} completo" button (REQ-FRET-006/007)', () => {
   it("shows the exact locked Spanish label per chord, matching visible text and aria-label", async () => {
     const cases: Array<[Chord, string]> = [
-      [RE_MAYOR, "Tocar Re mayor completo"],
-      [LA_CON_SEPTIMA, "Tocar La con séptima completo"],
-      [SOL_MAYOR, "Tocar Sol mayor completo"],
+      [RE_MAYOR, "Tocar D completo"],
+      [LA_CON_SEPTIMA, "Tocar A7 completo"],
+      [SOL_MAYOR, "Tocar G completo"],
     ];
     for (const [chord, expected] of cases) {
       const { screen, render } = await createDOM();
@@ -301,10 +301,10 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={RE_MAYOR} />);
     const expected = [
-      ["A3", "0", "Cuerda A3, traste 0, nota La, acorde Re mayor"],
-      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Re mayor"],
-      ["A4", "0", "Cuerda A4, traste 0, nota La, acorde Re mayor"],
-      ["E5", "2", "Cuerda E5, traste 2, nota Fa sostenido, acorde Re mayor"],
+      ["A3", "0", "Cuerda A3, traste 0, nota La, acorde D"],
+      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde D"],
+      ["A4", "0", "Cuerda A4, traste 0, nota La, acorde D"],
+      ["E5", "2", "Cuerda E5, traste 2, nota Fa sostenido, acorde D"],
     ];
     for (const [str, fret, label] of expected) {
       const cell = screen.querySelector(
@@ -314,18 +314,18 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     }
   });
 
-  it("La con séptima cells carry the correct Spanish labels", async () => {
+  it("A7 (la-con-septima) cells carry the correct Spanish labels", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={LA_CON_SEPTIMA} />);
     const expected = [
-      ["A3", "0", "Cuerda A3, traste 0, nota La, acorde La con séptima"],
-      ["D4", "2", "Cuerda D4, traste 2, nota Mi, acorde La con séptima"],
+      ["A3", "0", "Cuerda A3, traste 0, nota La, acorde A7"],
+      ["D4", "2", "Cuerda D4, traste 2, nota Mi, acorde A7"],
       [
         "A4",
         "4",
-        "Cuerda A4, traste 4, nota Do sostenido, acorde La con séptima",
+        "Cuerda A4, traste 4, nota Do sostenido, acorde A7",
       ],
-      ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde La con séptima"],
+      ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde A7"],
     ];
     for (const [str, fret, label] of expected) {
       const cell = screen.querySelector(
@@ -339,10 +339,10 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={SOL_MAYOR} />);
     const expected = [
-      ["A3", "2", "Cuerda A3, traste 2, nota Si, acorde Sol mayor"],
-      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Sol mayor"],
-      ["A4", "2", "Cuerda A4, traste 2, nota Si, acorde Sol mayor"],
-      ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde Sol mayor"],
+      ["A3", "2", "Cuerda A3, traste 2, nota Si, acorde G"],
+      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde G"],
+      ["A4", "2", "Cuerda A4, traste 2, nota Si, acorde G"],
+      ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde G"],
     ];
     for (const [str, fret, label] of expected) {
       const cell = screen.querySelector(
@@ -356,10 +356,10 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={RE_MENOR} />);
     const expected = [
-      ["A3", "0", "Cuerda A3, traste 0, nota La, acorde Re menor"],
-      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Re menor"],
-      ["A4", "0", "Cuerda A4, traste 0, nota La, acorde Re menor"],
-      ["E5", "1", "Cuerda E5, traste 1, nota Fa, acorde Re menor"],
+      ["A3", "0", "Cuerda A3, traste 0, nota La, acorde Dm"],
+      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Dm"],
+      ["A4", "0", "Cuerda A4, traste 0, nota La, acorde Dm"],
+      ["E5", "1", "Cuerda E5, traste 1, nota Fa, acorde Dm"],
     ];
     for (const [str, fret, label] of expected) {
       const cell = screen.querySelector(
@@ -373,10 +373,10 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={SOL_MENOR} />);
     const expected = [
-      ["A3", "1", "Cuerda A3, traste 1, nota Si bemol, acorde Sol menor"],
-      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Sol menor"],
-      ["A4", "1", "Cuerda A4, traste 1, nota Si bemol, acorde Sol menor"],
-      ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde Sol menor"],
+      ["A3", "1", "Cuerda A3, traste 1, nota La sostenido, acorde Gm"],
+      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Gm"],
+      ["A4", "1", "Cuerda A4, traste 1, nota La sostenido, acorde Gm"],
+      ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde Gm"],
     ];
     for (const [str, fret, label] of expected) {
       const cell = screen.querySelector(
@@ -482,7 +482,7 @@ describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised
     expect(a4First).toBeLessThan(e5First);
   });
 
-  it("within the E5 row, frets run 7 -> 0 left to right, matching Diapason's FRET_COLUMNS", async () => {
+  it("within the E5 row, frets run 11 -> 0 left to right (wider than Diapason's 8-column FRET_COLUMNS, to fit every tono's voicing)", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={RE_MAYOR} />);
     const row = screen.querySelector(
@@ -491,7 +491,7 @@ describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised
     expect(row).not.toBeNull();
     const cells = Array.from(row!.querySelectorAll(".chord-fret"));
     const frets = cells.map((c) => Number(c.getAttribute("data-fret")));
-    expect(frets).toEqual([7, 6, 5, 4, 3, 2, 1, 0]);
+    expect(frets).toEqual([11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
   });
 
   it("the open string (fret 0) carries the chord-fret--open differentiator class", async () => {
@@ -507,7 +507,7 @@ describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised
     expect(frettedCell.classList.contains("chord-fret--open")).toBe(false);
   });
 
-  it("renders a fret-number ruler below the neck, numbered 7 down to 0", async () => {
+  it("renders a fret-number ruler below the neck, numbered 11 down to 0", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={RE_MAYOR} />);
     const header = screen.querySelector(".chord-fretboard__fret-header");
@@ -515,7 +515,20 @@ describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised
     const nums = Array.from(
       header!.querySelectorAll(".chord-fretboard__fret-num"),
     ).map((el) => el.textContent?.trim());
-    expect(nums).toEqual(["7", "6", "5", "4", "3", "2", "1", "0"]);
+    expect(nums).toEqual([
+      "11",
+      "10",
+      "9",
+      "8",
+      "7",
+      "6",
+      "5",
+      "4",
+      "3",
+      "2",
+      "1",
+      "0",
+    ]);
   });
 });
 

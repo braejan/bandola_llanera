@@ -1,5 +1,6 @@
 import {
   component$,
+  useComputed$,
   useContextProvider,
   useSignal,
   useStylesScoped$,
@@ -8,57 +9,83 @@ import {
   $,
 } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
-import { ChordFretboard } from "../../components/chord-fretboard/chord-fretboard";
+import { ChordCarousel } from "../../components/chord-carousel/chord-carousel";
 import { Footer } from "../../components/footer/footer";
 import { AudioStatusContext } from "../../audio/audio-status-context";
 import { playCircleSequence } from "../../audio/play-chord";
-import { CIRCLES, type CircleId } from "../../music/chords";
+import {
+  DEFAULT_CIRCLE_ID,
+  getCircleById,
+  type CircleQuality,
+} from "../../music/chords";
+import {
+  ALL_KEYS_LIST,
+  getKeyLabel,
+  getKeyLetter,
+  type Key,
+} from "../../music/scales";
 
 /**
- * /acordes — integrates all 4 capabilities (ChordData, ChordFretboard,
- * ChordPlayback, StudentMenu). StudentMenu is not rendered here — it
- * lives in `src/routes/layout.tsx`, above every route. `Footer` IS
- * rendered here (page-local, mirrors the landing route's own
- * `<main>` + `<Footer />` sibling pattern — Footer is not global).
+ * /acordes — the joropo harmonic circle (V7–I–IV), in all 12 tonos.
  *
- * Owns `circleId` + `audioStatus` and PROVIDES `AudioStatusContext` —
- * mirrors the ScaleSwitcher precedent (route/page-level component owns
- * the signal + renders the visible status node; child components only
- * consume the context and write to it via `onStatus`).
+ * Owns 3 pieces of state: `tonoKey` (which of the 12 tonos), `quality`
+ * (mayor/menor), and `activeChordIndex` (which of the circle's 3
+ * chords the ChordCarousel shows) — one signal drives BOTH manual
+ * carousel navigation and the auto-advance during `playCircleSequence`
+ * (via its `onChordStart` callback), so there is exactly one source of
+ * truth for "which chord is showing" regardless of how it got there.
  *
- * The circle-sequence AbortController uses the SAME
- * `useSignal<NoSerialize<AbortController>>` + `noSerialize()` +
- * finally-guard pattern as ScaleSwitcher's `onTuningClick$`/
- * `onScaleClick$` — a plain `useSignal<AbortController>()` throws at
- * serialization (pinned ScaleSwitcher learning).
+ * `currentCircle` is a `useComputed$` derived from `tonoKey`/`quality`
+ * — NOT a plain `const`. A plain two-statement `const circle = ...;
+ * const chords = circle.chords;` derivation silently breaks Qwik's
+ * prop-reactivity tracking into a child component (confirmed via a
+ * minimal repro: the exact same derivation inlined as ONE expression,
+ * or wrapped in `useComputed$`, both update the child correctly; split
+ * across two `const` statements, the child keeps stale props even
+ * though the SAME expression rendered as this component's own JSX
+ * text updates fine). `useComputed$` is also recomputed again inside
+ * `onPlayCircleClick$` (reading the signals directly rather than
+ * closing over the render-time value) so a key change mid-playback can
+ * never race a stale circle reference.
  *
- * Each `ChordFretboard` is keyed by `chord.id` (REQUIRED — see that
- * component's own lifecycle-contract doc comment): toggling
- * Mayor/Menor changes the chord at each position, so Qwik remounts a
- * fresh ChordFretboard instance with a fresh anim-target subscription
- * instead of mutating one in place. The shared dominant
- * (`la-con-septima`) keeps the same key across both circles, so IT
- * never remounts — which is correct, since its `chord.id` never
- * changes either.
+ * Mirrors the ScaleSwitcher/original-ChordFretboard precedent for the
+ * circle-sequence AbortController: `useSignal<NoSerialize<...>>` +
+ * `noSerialize()` + a finally-guard that only clears `isPlayingCircle`
+ * when its own run is still the current one.
  */
 
-const CIRCLE_SHORT_LABEL: Record<CircleId, string> = {
-  "joropo-d-mayor": "mayor",
-  "joropo-d-menor": "menor",
-};
+const DEFAULT_TONO: Key = "re";
+const DEFAULT_QUALITY: CircleQuality = "mayor";
+const QUALITIES: readonly CircleQuality[] = ["mayor", "menor"];
 
 export default component$(() => {
   useStylesScoped$(STYLES);
 
-  const circleId = useSignal<CircleId>(CIRCLES[0].id);
+  const tonoKey = useSignal<Key>(DEFAULT_TONO);
+  const quality = useSignal<CircleQuality>(DEFAULT_QUALITY);
+  const activeChordIndex = useSignal(0);
   const audioStatus = useSignal<string>("");
   useContextProvider(AudioStatusContext, audioStatus);
 
   const circleAbort = useSignal<NoSerialize<AbortController>>(undefined);
   const isPlayingCircle = useSignal(false);
 
-  const onCircleToggleClick$ = $((id: CircleId) => {
-    circleId.value = id;
+  const currentCircle = useComputed$(
+    () =>
+      getCircleById(`joropo-${tonoKey.value}-${quality.value}`) ??
+      getCircleById(DEFAULT_CIRCLE_ID)!,
+  );
+
+  const onTonoClick$ = $((key: Key) => {
+    tonoKey.value = key;
+  });
+
+  const onQualityClick$ = $((q: CircleQuality) => {
+    quality.value = q;
+  });
+
+  const onCarouselNavigate$ = $((index: number) => {
+    activeChordIndex.value = index;
   });
 
   const onPlayCircleClick$ = $(async () => {
@@ -67,12 +94,17 @@ export default component$(() => {
     circleAbort.value = noSerialize(controller);
     isPlayingCircle.value = true;
     try {
-      const circle = CIRCLES.find((c) => c.id === circleId.value);
-      if (!circle) return;
+      const circle =
+        getCircleById(`joropo-${tonoKey.value}-${quality.value}`) ??
+        getCircleById(DEFAULT_CIRCLE_ID)!;
       await playCircleSequence(circle, {
         signal: controller.signal,
         onStatus: (msg) => {
           audioStatus.value = msg;
+        },
+        onChordStart: (chord) => {
+          const idx = circle.chords.findIndex((c) => c.id === chord.id);
+          if (idx !== -1) activeChordIndex.value = idx;
         },
       });
     } finally {
@@ -85,42 +117,70 @@ export default component$(() => {
     }
   });
 
-  const currentCircle =
-    CIRCLES.find((c) => c.id === circleId.value) ?? CIRCLES[0];
-
   return (
     <>
-      <main class="acordes" aria-label="Acordes del círculo de Re">
+      <main class="acordes" aria-label="Acordes del círculo armónico">
         <h1 class="acordes__title font-display">Acordes</h1>
         <p class="acordes__lede">
-          El círculo armónico de Re en joropo — toca cada acorde completo o
-          nota por nota.
+          El círculo armónico del joropo — elige el tono, toca cada acorde
+          completo o nota por nota, y sigue el círculo completo cuando
+          suena.
         </p>
 
         <div class="controls-frame">
-          <div class="circle-selector" role="radiogroup" aria-label="Círculo">
-            {CIRCLES.map((circle) => {
-              const active = circle.id === circleId.value;
+          <div class="tono-selector" role="radiogroup" aria-label="Tono">
+            {ALL_KEYS_LIST.map((key) => {
+              const active = key === tonoKey.value;
               return (
                 <button
-                  key={circle.id}
+                  key={key}
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  class={["circle", active ? "circle--active" : ""].join(" ")}
-                  data-circle={circle.id}
-                  onClick$={() => onCircleToggleClick$(circle.id)}
+                  class={["tono", active ? "tono--active" : ""].join(" ")}
+                  data-tono={key}
+                  onClick$={() => onTonoClick$(key)}
                 >
-                  <span class="circle-label">
-                    {CIRCLE_SHORT_LABEL[circle.id]}
-                  </span>
+                  {getKeyLabel(key)}
                 </button>
               );
             })}
           </div>
 
+          <div class="tono-letter-row">
+            <span class="tono-letter font-display" aria-hidden="true">
+              {getKeyLetter(tonoKey.value)}
+            </span>
+
+            <div
+              class="quality-selector"
+              role="radiogroup"
+              aria-label="Modo"
+            >
+              {QUALITIES.map((q) => {
+                const active = q === quality.value;
+                return (
+                  <button
+                    key={q}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    class={[
+                      "quality",
+                      active ? "quality--active" : "",
+                    ].join(" ")}
+                    data-quality={q}
+                    onClick$={() => onQualityClick$(q)}
+                  >
+                    {q}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <p class="current-circle" aria-label="Círculo actual">
-            {currentCircle.label}
+            {currentCircle.value.label}
           </p>
 
           <button
@@ -143,10 +203,13 @@ export default component$(() => {
           </p>
         </div>
 
-        <div class="chords">
-          {currentCircle.chords.map((chord) => (
-            <ChordFretboard chord={chord} key={chord.id} />
-          ))}
+        <div class="carousel-frame">
+          <ChordCarousel
+            chords={currentCircle.value.chords}
+            activeIndex={activeChordIndex.value}
+            disabled={isPlayingCircle.value}
+            onNavigate$={onCarouselNavigate$}
+          />
         </div>
       </main>
 
@@ -161,7 +224,7 @@ export const head: DocumentHead = {
     {
       name: "description",
       content:
-        "Aprende los acordes del círculo armónico de Re en joropo — La con séptima, Re mayor, Sol mayor y sus relativos menores — en un diapason interactivo de bandola llanera.",
+        "Aprende los acordes del círculo armónico del joropo — dominante, tónica y subdominante — en los 12 tonos, en un diapason interactivo de bandola llanera.",
     },
   ],
 };
@@ -212,14 +275,85 @@ const STYLES = `
     gap: var(--space-3);
   }
 
-  .circle-selector {
+  .tono-selector {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1) var(--space-3);
+  }
+
+  .tono {
+    font-family: var(--font-display);
+    font-size: clamp(0.9rem, 0.6vw + 0.75rem, 1.15rem);
+    color: var(--color-ink);
+    letter-spacing: 0.01em;
+    padding: var(--space-1) var(--space-1);
+    position: relative;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color var(--motion-medium) var(--ease-printed);
+  }
+
+  .tono::after {
+    content: "";
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 1px;
+    height: 2px;
+    background: var(--color-ink);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 280ms ease-out;
+  }
+
+  .tono:hover::after,
+  .tono:focus-visible::after {
+    transform: scaleX(1);
+  }
+
+  .tono--active,
+  .tono--active:hover,
+  .tono--active:focus-visible {
+    color: var(--color-ground);
+  }
+
+  .tono--active::after {
+    background: var(--color-ground);
+    transform: scaleX(1);
+  }
+
+  .tono-letter-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-6);
+    width: 100%;
+  }
+
+  /* The big, at-a-glance "which note" signal (REQ: picked note must be
+     big and visible) — the conventional letter name (D, A, G…), NOT
+     the Spanish solfège used everywhere else, matching how printed
+     bandola chord references label roots. Renders in the ground color
+     on paper — the same "Active-Ink Rule" the Mayor/Menor toggle
+     already uses, so it reads as the page's own emphasis, not a new
+     accent color. */
+  .tono-letter {
+    font-size: clamp(3rem, 4vw + 2rem, 5rem);
+    line-height: 1;
+    color: var(--color-ground);
+  }
+
+  .quality-selector {
     display: flex;
     align-items: baseline;
     justify-content: center;
     gap: var(--space-5);
   }
 
-  .circle {
+  .quality {
     font-family: var(--font-display);
     font-size: var(--fs-mode);
     color: var(--color-ink);
@@ -229,10 +363,11 @@ const STYLES = `
     background: transparent;
     border: none;
     cursor: pointer;
+    text-transform: capitalize;
     transition: color var(--motion-medium) var(--ease-printed);
   }
 
-  .circle::after {
+  .quality::after {
     content: "";
     position: absolute;
     left: var(--space-2);
@@ -245,18 +380,18 @@ const STYLES = `
     transition: transform 280ms ease-out;
   }
 
-  .circle:hover::after,
-  .circle:focus-visible::after {
+  .quality:hover::after,
+  .quality:focus-visible::after {
     transform: scaleX(1);
   }
 
-  .circle--active,
-  .circle--active:hover,
-  .circle--active:focus-visible {
+  .quality--active,
+  .quality--active:hover,
+  .quality--active:focus-visible {
     color: var(--color-ground);
   }
 
-  .circle--active::after {
+  .quality--active::after {
     background: var(--color-ground);
     transform: scaleX(1);
   }
@@ -314,18 +449,22 @@ const STYLES = `
     opacity: 1;
   }
 
-  .chords {
+  /* Deliberately wider than .controls-frame's 640px — matching the
+     landing poster's own max-width (DESIGN.md's established "big"
+     scale in this system) — so the carousel, the page's primary
+     big-and-visible content, stands out rather than matching the
+     narrower controls above it. */
+  .carousel-frame {
     width: 100%;
-    max-width: 640px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-5);
+    max-width: 960px;
     padding-bottom: var(--space-6);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .circle,
-    .circle::after,
+    .tono,
+    .tono::after,
+    .quality,
+    .quality::after,
     .btn-circle,
     .audio-status {
       transition: none;
@@ -336,8 +475,14 @@ const STYLES = `
     .acordes {
       padding: var(--space-3) var(--space-2);
     }
-    .circle-selector {
+    .quality-selector {
       gap: var(--space-3);
+    }
+    .tono-letter-row {
+      gap: var(--space-3);
+    }
+    .tono-letter {
+      font-size: clamp(2.25rem, 8vw, 3.5rem);
     }
   }
 `;

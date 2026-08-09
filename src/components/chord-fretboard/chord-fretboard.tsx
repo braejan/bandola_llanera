@@ -65,9 +65,12 @@ interface ChordFretboardProps {
 // matches Diapason's physical top-to-bottom order exactly.
 const STRING_ORDER: readonly StringId[] = ["A3", "D4", "A4", "E5"];
 
-// Fret 7 (high, body end) on the left, fret 0 (open string, nut) on
-// the right — matches Diapason's FRET_COLUMNS exactly.
-const FRET_COLUMNS = [7, 6, 5, 4, 3, 2, 1, 0] as const;
+// Fret 11 (high, body end) on the left, fret 0 (open string, nut) on
+// the right. Wider than Diapason's 8-column FRET_COLUMNS: the
+// role-based transposition formula in `music/chords.ts` can land any
+// of the 12 tonos' voicings anywhere in 0..11, so every fret the
+// formula can produce must be on-screen (REQ: never clip a note).
+const FRET_COLUMNS = [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] as const;
 
 const OPEN_MIDI: Record<StringId, number> = {
   A3: 57,
@@ -76,7 +79,7 @@ const OPEN_MIDI: Record<StringId, number> = {
   E5: 76,
 };
 
-/** Generic per-pitch-class label (visible cell text), all 32 cells. */
+/** Generic per-pitch-class label (visible cell text), all 12 pitch classes. */
 const PC_NAMES = [
   "Do",
   "Do♯",
@@ -93,28 +96,26 @@ const PC_NAMES = [
 ];
 
 /**
- * LOCKED Spanish solfège names for the aria-label of PLAYABLE cells
- * (REQ-FRET-008). A closed lookup, not a generic enharmonic-spelling
- * algorithm: the 5 chord voicings only ever produce these 12 distinct
- * MIDI values, and the spec locks specific enharmonic spellings per
- * musical context (e.g. midi 70/58 are "Si bemol", not "La sostenido",
- * as the minor third of Re menor / Sol menor) that a generic
- * sharp-only table cannot represent.
+ * Same 12 pitch classes, spelled out for the aria-label (a screen
+ * reader has no reliable pronunciation for the "♯" glyph, so the
+ * accessible name spells "sostenido" instead of reusing PC_NAMES).
+ * Sharp-only, matching the rest of the app's convention (`scales.ts`'s
+ * `KEY_DATA` — no flats).
  */
-const NOTE_NAME_BY_MIDI: Readonly<Record<number, string>> = {
-  57: "La",
-  58: "Si bemol",
-  59: "Si",
-  62: "Re",
-  64: "Mi",
-  69: "La",
-  70: "Si bemol",
-  71: "Si",
-  73: "Do sostenido",
-  77: "Fa",
-  78: "Fa sostenido",
-  79: "Sol",
-};
+const PC_NAMES_SPOKEN = [
+  "Do",
+  "Do sostenido",
+  "Re",
+  "Re sostenido",
+  "Mi",
+  "Fa",
+  "Fa sostenido",
+  "Sol",
+  "Sol sostenido",
+  "La",
+  "La sostenido",
+  "Si",
+];
 
 const FLASH_MS = 400;
 
@@ -253,7 +254,7 @@ export const ChordFretboard = component$<ChordFretboardProps>(
                     .join(" ");
                   const label = playable
                     ? `Cuerda ${stringId}, traste ${fret}, nota ${
-                        NOTE_NAME_BY_MIDI[midi] ?? ""
+                        PC_NAMES_SPOKEN[midi % 12]
                       }, acorde ${chord.name}`
                     : `Cuerda ${stringId}, traste ${fret}, fuera del acorde ${chord.name}`;
                   return (
@@ -333,7 +334,7 @@ const STYLES = `
 
   .chord-fretboard__row {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(12, 1fr);
     gap: 2px;
     align-items: center;
     position: relative;
@@ -483,7 +484,7 @@ const STYLES = `
      column grid, so both instruments read as one system). */
   .chord-fretboard__fret-header {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(12, 1fr);
     gap: 2px;
     border-top: 1px solid var(--color-ink);
     padding-top: 3px;

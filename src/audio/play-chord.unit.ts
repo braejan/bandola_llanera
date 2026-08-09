@@ -42,7 +42,9 @@ import {
   playChordById,
   playCircleSequence,
 } from "./play-chord";
-import { JOROPO_D_MAJOR_CIRCLE } from "../music/chords";
+import { getCircleById } from "../music/chords";
+
+const JOROPO_D_MAJOR_CIRCLE = getCircleById("joropo-re-mayor")!;
 
 const playMidiNoteMock = vi.mocked(playMidiNote);
 const publishMock = vi.mocked(publish);
@@ -246,6 +248,62 @@ describe("playCircleSequence — joropo vamp: A7 A7, tonic tonic, subdominant su
       await vi.advanceTimersByTimeAsync(700);
     }
     await p;
+  });
+});
+
+describe("playCircleSequence — onChordStart (chord role, not id string-matching)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("fires onChordStart with the chord and step index before each of the 8 vamp strikes", async () => {
+    const onChordStart = vi.fn();
+    const p = playCircleSequence(JOROPO_D_MAJOR_CIRCLE, { onChordStart });
+
+    await vi.advanceTimersByTimeAsync(0);
+    for (let i = 0; i < 7; i++) {
+      await vi.advanceTimersByTimeAsync(1000);
+    }
+    await vi.advanceTimersByTimeAsync(1000);
+    await p;
+
+    expect(onChordStart).toHaveBeenCalledTimes(8);
+    const idsByStep = onChordStart.mock.calls.map(
+      (c) => (c[0] as { id: string }).id,
+    );
+    expect(idsByStep).toEqual([
+      "la-con-septima",
+      "la-con-septima",
+      "re-mayor",
+      "re-mayor",
+      "sol-mayor-cuarta",
+      "sol-mayor-cuarta",
+      "la-con-septima",
+      "la-con-septima",
+    ]);
+    const stepsArg = onChordStart.mock.calls.map((c) => c[1]);
+    expect(stepsArg).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("never fires onChordStart for a step past an abort", async () => {
+    const onChordStart = vi.fn();
+    const controller = new AbortController();
+    const p = playCircleSequence(JOROPO_D_MAJOR_CIRCLE, {
+      onChordStart,
+      signal: controller.signal,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onChordStart).toHaveBeenCalledTimes(1);
+
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(1000);
+    await p;
+
+    expect(onChordStart).toHaveBeenCalledTimes(1);
   });
 });
 

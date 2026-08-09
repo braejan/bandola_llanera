@@ -1,21 +1,24 @@
 /**
  * Strict TDD — /acordes route integration tests.
  *
- * Integrates all 4 capabilities: ChordData (CIRCLES), ChordFretboard
- * (3x rendered), ChordPlayback (playCircleSequence on the "Tocar
- * círculo completo" button), and StudentMenu is NOT re-tested here
- * (it lives in the layout, not this route). Covers:
- *   - toggling Mayor/Menor switches the 3 rendered chords
+ * Integrates ChordData (12-tono circles), the ChordCarousel (which
+ * renders 3x ChordFretboard internally), and ChordPlayback
+ * (playCircleSequence on the "Tocar círculo completo" button, and its
+ * onChordStart wiring driving the carousel's active slide).
+ * StudentMenu is NOT re-tested here (it lives in the layout, not this
+ * route). Covers:
+ *   - default tono (Re) + modo (mayor) render the right 3 chords
+ *   - switching tono / modo swaps the rendered chords
  *   - the rejected-audio status message surfaces on a cell click
+ *   - playCircleSequence's onChordStart drives the carousel's slide
  *   - the Spanish `head` meta is present
  *
  * `play-midi-note` is left UNMOCKED (real) so a stubbed
  * `AudioContext = undefined` genuinely exercises the rejection path —
  * the same trick `scale-switcher.unit.tsx` uses. Only `play-chord`'s
- * `playCircleSequence`/`playChord` are mocked, since the circle-level
- * sequencing itself is already fully covered by `play-chord.unit.ts`.
+ * `playCircleSequence`/`playChord` are mocked.
  */
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDOM } from "@builder.io/qwik/testing";
 import { QwikCityMockProvider } from "@builder.io/qwik-city";
 
@@ -31,6 +34,11 @@ import Acordes, { head } from "./index";
 
 const playCircleSequenceMock = vi.mocked(playCircleSequence);
 
+beforeEach(() => {
+  vi.clearAllMocks();
+  playCircleSequenceMock.mockResolvedValue(undefined);
+});
+
 async function renderAcordes() {
   const { screen, render, userEvent } = await createDOM();
   await render(
@@ -41,7 +49,18 @@ async function renderAcordes() {
   return { screen, userEvent };
 }
 
-describe("/acordes — renders the default (Mayor) circle", () => {
+function findButtonByText(
+  screen: { querySelectorAll: (sel: string) => NodeListOf<Element> },
+  text: string,
+): HTMLElement {
+  const btn = Array.from(screen.querySelectorAll("button")).find(
+    (b) => b.textContent?.trim() === text,
+  );
+  if (!btn) throw new Error(`No button with text "${text}"`);
+  return btn as HTMLElement;
+}
+
+describe("/acordes — renders the default tono (Re) and modo (mayor)", () => {
   it("renders exactly 3 ChordFretboard instances for La con séptima, Re mayor, Sol mayor", async () => {
     const { screen } = await renderAcordes();
     const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
@@ -49,24 +68,61 @@ describe("/acordes — renders the default (Mayor) circle", () => {
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
       "la-con-septima",
       "re-mayor",
-      "sol-mayor",
+      "sol-mayor-cuarta",
     ]);
   });
 
-  it('the "mayor" toggle is checked by default', async () => {
+  it("shows the big tono letter (D for Re)", async () => {
     const { screen } = await renderAcordes();
-    const mayorBtn = screen.querySelector(
-      'button[data-circle="joropo-d-mayor"]',
+    expect(screen.querySelector(".tono-letter")?.textContent).toBe("D");
+  });
+
+  it('"Re" is checked in the tono selector, and "mayor" in the modo selector', async () => {
+    const { screen } = await renderAcordes();
+    expect(
+      screen.querySelector('button[data-tono="re"]')?.getAttribute("aria-checked"),
+    ).toBe("true");
+    expect(
+      screen
+        .querySelector('button[data-quality="mayor"]')
+        ?.getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
+  it("shows the current circle label", async () => {
+    const { screen } = await renderAcordes();
+    expect(screen.querySelector(".current-circle")?.textContent).toBe(
+      "Círculo de Re mayor",
     );
-    expect(mayorBtn?.getAttribute("aria-checked")).toBe("true");
   });
 });
 
-describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () => {
-  it("clicking the Menor toggle swaps to La con séptima, Re menor, Sol menor", async () => {
+describe("/acordes — switching tono swaps the rendered chords", () => {
+  it("clicking Sol switches to the Sol mayor circle (Re con séptima, Sol mayor, Do mayor)", async () => {
+    const { screen, userEvent } = await renderAcordes();
+    const solBtn = screen.querySelector(
+      'button[data-tono="sol"]',
+    ) as HTMLElement;
+    await userEvent(solBtn, "click");
+
+    const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
+    expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
+      "re-con-septima",
+      "sol-mayor",
+      "do-mayor-cuarta",
+    ]);
+    expect(screen.querySelector(".current-circle")?.textContent).toBe(
+      "Círculo de Sol mayor",
+    );
+    expect(screen.querySelector(".tono-letter")?.textContent).toBe("G");
+  });
+});
+
+describe("/acordes — switching modo swaps the rendered chords", () => {
+  it("clicking menor swaps to La con séptima, Re menor, Sol menor", async () => {
     const { screen, userEvent } = await renderAcordes();
     const menorBtn = screen.querySelector(
-      'button[data-circle="joropo-d-menor"]',
+      'button[data-quality="menor"]',
     ) as HTMLElement;
     await userEvent(menorBtn, "click");
 
@@ -74,11 +130,11 @@ describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () 
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
       "la-con-septima",
       "re-menor",
-      "sol-menor",
+      "sol-menor-cuarta",
     ]);
   });
 
-  it("the dominant (la-con-séptima) stays rendered across both circles", async () => {
+  it("the dominant (la-con-séptima) stays rendered across both modos", async () => {
     const { screen, userEvent } = await renderAcordes();
     const before = Array.from(screen.querySelectorAll(".chord-fretboard")).map(
       (b) => b.getAttribute("data-chord"),
@@ -86,7 +142,7 @@ describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () 
     expect(before).toContain("la-con-septima");
 
     const menorBtn = screen.querySelector(
-      'button[data-circle="joropo-d-menor"]',
+      'button[data-quality="menor"]',
     ) as HTMLElement;
     await userEvent(menorBtn, "click");
 
@@ -96,14 +152,14 @@ describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () 
     expect(after).toContain("la-con-septima");
   });
 
-  it("toggling back to Mayor restores the major circle's 3 chords", async () => {
+  it("toggling back to mayor restores the major circle's 3 chords", async () => {
     const { screen, userEvent } = await renderAcordes();
     const menorBtn = screen.querySelector(
-      'button[data-circle="joropo-d-menor"]',
+      'button[data-quality="menor"]',
     ) as HTMLElement;
     await userEvent(menorBtn, "click");
     const mayorBtn = screen.querySelector(
-      'button[data-circle="joropo-d-mayor"]',
+      'button[data-quality="mayor"]',
     ) as HTMLElement;
     await userEvent(mayorBtn, "click");
 
@@ -111,7 +167,7 @@ describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () 
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
       "la-con-septima",
       "re-mayor",
-      "sol-mayor",
+      "sol-mayor-cuarta",
     ]);
   });
 });
@@ -148,23 +204,46 @@ describe("/acordes — rejected-audio status message", () => {
 describe('/acordes — "Tocar círculo completo" button', () => {
   it("renders with the exact locked label", async () => {
     const { screen } = await renderAcordes();
-    const btn = Array.from(screen.querySelectorAll("button")).find(
-      (b) => b.textContent?.trim() === "Tocar círculo completo",
-    );
-    expect(btn).toBeTruthy();
+    expect(() => findButtonByText(screen, "Tocar círculo completo")).not.toThrow();
   });
 
   it("clicking it calls playCircleSequence with the active circle and a fresh AbortSignal", async () => {
     const { screen, userEvent } = await renderAcordes();
-    const btn = Array.from(screen.querySelectorAll("button")).find(
-      (b) => b.textContent?.trim() === "Tocar círculo completo",
-    ) as HTMLElement;
+    const btn = findButtonByText(screen, "Tocar círculo completo");
     await userEvent(btn, "click");
     expect(playCircleSequenceMock).toHaveBeenCalledTimes(1);
     const [circle, opts] = playCircleSequenceMock.mock.calls[0];
-    expect(circle.id).toBe("joropo-d-mayor");
+    expect(circle.id).toBe("joropo-re-mayor");
     expect(opts?.signal).toBeInstanceOf(AbortSignal);
     expect(opts?.signal?.aborted).toBe(false);
+  });
+
+  it("plays the currently selected tono/modo, not always the default", async () => {
+    const { screen, userEvent } = await renderAcordes();
+    const solBtn = screen.querySelector(
+      'button[data-tono="sol"]',
+    ) as HTMLElement;
+    await userEvent(solBtn, "click");
+    const btn = findButtonByText(screen, "Tocar círculo completo");
+    await userEvent(btn, "click");
+    const [circle] = playCircleSequenceMock.mock.calls[0];
+    expect(circle.id).toBe("joropo-sol-mayor");
+  });
+});
+
+describe("/acordes — onChordStart drives the carousel's active slide", () => {
+  it("moves the carousel track to the chord playCircleSequence reports via onChordStart", async () => {
+    playCircleSequenceMock.mockImplementation(async (circle, opts) => {
+      opts?.onChordStart?.(circle.chords[2], 4);
+    });
+    const { screen, userEvent } = await renderAcordes();
+    const btn = findButtonByText(screen, "Tocar círculo completo");
+    await userEvent(btn, "click");
+
+    const track = screen.querySelector(
+      ".chord-carousel__track",
+    ) as HTMLElement;
+    expect(track.style.transform).toBe("translateX(-200%)");
   });
 });
 

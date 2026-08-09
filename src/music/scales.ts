@@ -52,6 +52,32 @@ export const KEY_DATA: Record<Key, { pc: number; label: string }> = {
   si: { pc: 11, label: "Si" },
 };
 
+/**
+ * Conventional international letter names (A–G, sharps only), matching
+ * how printed chord references (e.g. Alejo Cordero's bandola llanera
+ * charts) label roots — distinct from the Spanish solfège used
+ * everywhere else in this app's copy. Used only for the big single-
+ * letter tono indicator on `/acordes`.
+ */
+export const KEY_LETTER: Record<Key, string> = {
+  do: "C",
+  "do#": "C♯",
+  re: "D",
+  "re#": "D♯",
+  mi: "E",
+  fa: "F",
+  "fa#": "F♯",
+  sol: "G",
+  "sol#": "G♯",
+  la: "A",
+  "la#": "A♯",
+  si: "B",
+};
+
+export function getKeyLetter(key: Key): string {
+  return KEY_LETTER[key];
+}
+
 const MODE_INTERVALS: Record<Mode, number[]> = {
   mayor: [0, 2, 4, 5, 7, 9, 11],
   menor: [0, 2, 3, 5, 7, 8, 10],
