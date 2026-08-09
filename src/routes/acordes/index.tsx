@@ -246,7 +246,6 @@ export const head: DocumentHead = {
 
 const STYLES = `
   .acordes {
-    min-height: 100vh;
     width: 100%;
     display: flex;
     flex-direction: column;
