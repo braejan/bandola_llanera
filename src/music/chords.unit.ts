@@ -100,16 +100,16 @@ describe("chords — locked MIDI voicings (REQ-DATA-003)", () => {
     expect(byString.E5).toBe(3);
   });
 
-  it("sol-mayor voicing sorted ascending is exactly [62, 67, 69, 78]", () => {
-    expect(sortedMidis(JOROPO_D_MAJOR[2])).toEqual([62, 67, 69, 78]);
+  it("sol-mayor voicing sorted ascending is exactly [59, 62, 71, 79]", () => {
+    expect(sortedMidis(JOROPO_D_MAJOR[2])).toEqual([59, 62, 71, 79]);
   });
 
-  it("re-menor voicing sorted ascending is exactly [57, 62, 70, 77]", () => {
-    expect(sortedMidis(JOROPO_D_MINOR[0])).toEqual([57, 62, 70, 77]);
+  it("re-menor voicing sorted ascending is exactly [57, 62, 69, 77]", () => {
+    expect(sortedMidis(JOROPO_D_MINOR[0])).toEqual([57, 62, 69, 77]);
   });
 
-  it("sol-menor voicing sorted ascending is exactly [57, 65, 69, 79]", () => {
-    expect(sortedMidis(JOROPO_D_MINOR[2])).toEqual([57, 65, 69, 79]);
+  it("sol-menor voicing sorted ascending is exactly [58, 62, 70, 79]", () => {
+    expect(sortedMidis(JOROPO_D_MINOR[2])).toEqual([58, 62, 70, 79]);
   });
 });
 

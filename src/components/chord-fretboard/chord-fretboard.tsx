@@ -95,19 +95,21 @@ const PC_NAMES = [
 /**
  * LOCKED Spanish solfège names for the aria-label of PLAYABLE cells
  * (REQ-FRET-008). A closed lookup, not a generic enharmonic-spelling
- * algorithm: the 5 chord voicings only ever produce these 11 distinct
+ * algorithm: the 5 chord voicings only ever produce these 12 distinct
  * MIDI values, and the spec locks specific enharmonic spellings per
- * musical context (e.g. midi 70 is "Si bemol", not "La sostenido", in
- * Re menor) that a generic sharp-only table cannot represent.
+ * musical context (e.g. midi 70/58 are "Si bemol", not "La sostenido",
+ * as the minor third of Re menor / Sol menor) that a generic
+ * sharp-only table cannot represent.
  */
 const NOTE_NAME_BY_MIDI: Readonly<Record<number, string>> = {
   57: "La",
+  58: "Si bemol",
+  59: "Si",
   62: "Re",
   64: "Mi",
-  65: "Fa",
-  67: "Sol",
   69: "La",
   70: "Si bemol",
+  71: "Si",
   73: "Do sostenido",
   77: "Fa",
   78: "Fa sostenido",

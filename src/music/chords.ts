@@ -81,10 +81,10 @@ const SOL_MAYOR: Chord = {
   rootPitchClass: 7,
   intervals: [0, 4, 7],
   voicing: [
-    { stringId: "A3", fret: 5, midi: 62 },
-    { stringId: "D4", fret: 5, midi: 67 },
-    { stringId: "A4", fret: 0, midi: 69 },
-    { stringId: "E5", fret: 2, midi: 78 },
+    { stringId: "A3", fret: 2, midi: 59 },
+    { stringId: "D4", fret: 0, midi: 62 },
+    { stringId: "A4", fret: 2, midi: 71 },
+    { stringId: "E5", fret: 3, midi: 79 },
   ],
 };
 
@@ -96,7 +96,7 @@ const RE_MENOR: Chord = {
   voicing: [
     { stringId: "A3", fret: 0, midi: 57 },
     { stringId: "D4", fret: 0, midi: 62 },
-    { stringId: "A4", fret: 1, midi: 70 },
+    { stringId: "A4", fret: 0, midi: 69 },
     { stringId: "E5", fret: 1, midi: 77 },
   ],
 };
@@ -107,9 +107,9 @@ const SOL_MENOR: Chord = {
   rootPitchClass: 7,
   intervals: [0, 3, 7],
   voicing: [
-    { stringId: "A3", fret: 0, midi: 57 },
-    { stringId: "D4", fret: 3, midi: 65 },
-    { stringId: "A4", fret: 0, midi: 69 },
+    { stringId: "A3", fret: 1, midi: 58 },
+    { stringId: "D4", fret: 0, midi: 62 },
+    { stringId: "A4", fret: 1, midi: 70 },
     { stringId: "E5", fret: 3, midi: 79 },
   ],
 };

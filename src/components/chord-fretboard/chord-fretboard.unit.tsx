@@ -339,10 +339,10 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={SOL_MAYOR} />);
     const expected = [
-      ["A3", "5", "Cuerda A3, traste 5, nota Re, acorde Sol mayor"],
-      ["D4", "5", "Cuerda D4, traste 5, nota Sol, acorde Sol mayor"],
-      ["A4", "0", "Cuerda A4, traste 0, nota La, acorde Sol mayor"],
-      ["E5", "2", "Cuerda E5, traste 2, nota Fa sostenido, acorde Sol mayor"],
+      ["A3", "2", "Cuerda A3, traste 2, nota Si, acorde Sol mayor"],
+      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Sol mayor"],
+      ["A4", "2", "Cuerda A4, traste 2, nota Si, acorde Sol mayor"],
+      ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde Sol mayor"],
     ];
     for (const [str, fret, label] of expected) {
       const cell = screen.querySelector(
@@ -358,7 +358,7 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     const expected = [
       ["A3", "0", "Cuerda A3, traste 0, nota La, acorde Re menor"],
       ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Re menor"],
-      ["A4", "1", "Cuerda A4, traste 1, nota Si bemol, acorde Re menor"],
+      ["A4", "0", "Cuerda A4, traste 0, nota La, acorde Re menor"],
       ["E5", "1", "Cuerda E5, traste 1, nota Fa, acorde Re menor"],
     ];
     for (const [str, fret, label] of expected) {
@@ -373,9 +373,9 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={SOL_MENOR} />);
     const expected = [
-      ["A3", "0", "Cuerda A3, traste 0, nota La, acorde Sol menor"],
-      ["D4", "3", "Cuerda D4, traste 3, nota Fa, acorde Sol menor"],
-      ["A4", "0", "Cuerda A4, traste 0, nota La, acorde Sol menor"],
+      ["A3", "1", "Cuerda A3, traste 1, nota Si bemol, acorde Sol menor"],
+      ["D4", "0", "Cuerda D4, traste 0, nota Re, acorde Sol menor"],
+      ["A4", "1", "Cuerda A4, traste 1, nota Si bemol, acorde Sol menor"],
       ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde Sol menor"],
     ];
     for (const [str, fret, label] of expected) {

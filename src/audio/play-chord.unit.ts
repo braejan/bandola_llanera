@@ -192,7 +192,7 @@ describe("playCircleSequence — walks the 3 chords in order (REQ-PLAY-005)", ()
 
     await vi.advanceTimersByTimeAsync(1500);
     expect(playMidiNoteMock.mock.calls.slice(8).map((c) => c[0])).toEqual([
-      62, 67, 69, 78,
+      59, 62, 71, 79,
     ]);
 
     // Trailing gap after the last chord (loop is not special-cased).
