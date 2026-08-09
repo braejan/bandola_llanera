@@ -168,7 +168,7 @@ describe("playChord — abort (REQ-PLAY-004)", () => {
   });
 });
 
-describe("playCircleSequence — walks the 3 chords in order (REQ-PLAY-005)", () => {
+describe("playCircleSequence — joropo dominant vamp: A7, A7, tonic, subdominant, A7 (REQ-PLAY-005, revised)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -177,7 +177,7 @@ describe("playCircleSequence — walks the 3 chords in order (REQ-PLAY-005)", ()
     vi.useRealTimers();
   });
 
-  it("plays La con séptima, then Re mayor, then Sol mayor, 1500ms apart by default", async () => {
+  it("plays La con séptima, La con séptima, Re mayor, Sol mayor, La con séptima, 1000ms apart by default", async () => {
     const p = playCircleSequence(JOROPO_D_MAJOR_CIRCLE);
 
     await vi.advanceTimersByTimeAsync(0);
@@ -185,38 +185,50 @@ describe("playCircleSequence — walks the 3 chords in order (REQ-PLAY-005)", ()
       57, 64, 73, 79,
     ]);
 
-    await vi.advanceTimersByTimeAsync(1500);
+    await vi.advanceTimersByTimeAsync(1000);
     expect(playMidiNoteMock.mock.calls.slice(4).map((c) => c[0])).toEqual([
+      57, 64, 73, 79,
+    ]);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(playMidiNoteMock.mock.calls.slice(8).map((c) => c[0])).toEqual([
       57, 62, 69, 78,
     ]);
 
-    await vi.advanceTimersByTimeAsync(1500);
-    expect(playMidiNoteMock.mock.calls.slice(8).map((c) => c[0])).toEqual([
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(playMidiNoteMock.mock.calls.slice(12).map((c) => c[0])).toEqual([
       59, 62, 71, 79,
     ]);
 
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(playMidiNoteMock.mock.calls.slice(16).map((c) => c[0])).toEqual([
+      57, 64, 73, 79,
+    ]);
+
     // Trailing gap after the last chord (loop is not special-cased).
-    await vi.advanceTimersByTimeAsync(1500);
+    await vi.advanceTimersByTimeAsync(1000);
     await p;
-    expect(playMidiNoteMock).toHaveBeenCalledTimes(12);
+    expect(playMidiNoteMock).toHaveBeenCalledTimes(20);
   });
 
-  it("does not start the second chord before 1500ms have elapsed", async () => {
+  it("does not start the second chord before 1000ms have elapsed", async () => {
     const p = playCircleSequence(JOROPO_D_MAJOR_CIRCLE);
     await vi.advanceTimersByTimeAsync(0);
     expect(playMidiNoteMock).toHaveBeenCalledTimes(4);
 
-    await vi.advanceTimersByTimeAsync(1499);
+    await vi.advanceTimersByTimeAsync(999);
     expect(playMidiNoteMock).toHaveBeenCalledTimes(4);
 
     await vi.advanceTimersByTimeAsync(1);
     expect(playMidiNoteMock).toHaveBeenCalledTimes(8);
 
-    // Drain the remaining gap + third chord + trailing gap (the loop
-    // is not special-cased) so `p` settles instead of leaking a
-    // pending sequence into the next test.
-    await vi.advanceTimersByTimeAsync(1500);
-    await vi.advanceTimersByTimeAsync(1500);
+    // Drain the remaining 3 chords + trailing gap (the loop is not
+    // special-cased) so `p` settles instead of leaking a pending
+    // sequence into the next test.
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await p;
   });
 
@@ -233,6 +245,8 @@ describe("playCircleSequence — walks the 3 chords in order (REQ-PLAY-005)", ()
     await vi.advanceTimersByTimeAsync(1);
     expect(playMidiNoteMock).toHaveBeenCalledTimes(8);
 
+    await vi.advanceTimersByTimeAsync(700);
+    await vi.advanceTimersByTimeAsync(700);
     await vi.advanceTimersByTimeAsync(700);
     await vi.advanceTimersByTimeAsync(700);
     await p;
@@ -257,10 +271,10 @@ describe("playCircleSequence — abort (REQ-PLAY-006)", () => {
     expect(playMidiNoteMock).toHaveBeenCalledTimes(4);
 
     controller.abort();
-    await vi.advanceTimersByTimeAsync(1500);
+    await vi.advanceTimersByTimeAsync(1000);
     await p;
 
-    // La con séptima (the second chord) must never be scheduled.
+    // The vamp's second step (La con séptima again) must never be scheduled.
     expect(playMidiNoteMock).toHaveBeenCalledTimes(4);
   });
 

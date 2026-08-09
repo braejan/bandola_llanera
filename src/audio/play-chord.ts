@@ -14,8 +14,10 @@
  * sequential same-JS-task `await`s of `playMidiNote` (no delay, no
  * timer between notes) keep every voice's `startedAt` within the same
  * `ctx.currentTime` sample (REQ-PLAY-002). `playCircleSequence` walks
- * a `Circle`'s three chords with a configurable delay between them
- * (default 1500ms — REQ-PLAY-005).
+ * a joropo-style dominant vamp — A7, A7, tonic, subdominant, A7 — over
+ * `circle`'s three chords, not a flat once-through. Each chord holds
+ * for `chordDurationMs` (default 1000ms — a 3/4 measure at 180 BPM:
+ * 3 quarter notes × 333ms ≈ 1000ms, a real joropo's galloping pace).
  *
  * `AUDIO_UNAVAILABLE_MESSAGE` is imported and re-exported BY REFERENCE
  * (never redefined) so every consumer — this module, ChordFretboard,
@@ -23,7 +25,7 @@
  */
 import { playMidiNote, AUDIO_UNAVAILABLE_MESSAGE } from "./play-midi-note";
 import { publish } from "./anim-target";
-import { getChordById, type Circle } from "../music/chords";
+import { getChordById, type Chord, type Circle } from "../music/chords";
 
 export { AUDIO_UNAVAILABLE_MESSAGE };
 
@@ -38,7 +40,7 @@ export interface PlayChordOpts {
 export interface PlayCircleSequenceOpts {
   onStatus?: (message: string) => void;
   signal?: AbortSignal;
-  /** Silence between chords, in ms. Defaults to 1500. */
+  /** Duration of each chord's measure, in ms. Defaults to 1000 (a 3/4 joropo measure at 180 BPM). */
   chordDurationMs?: number;
 }
 
@@ -49,7 +51,31 @@ export interface PlayChordByIdOpts {
 }
 
 const DEFAULT_TARGET_ID_PREFIX = "chord";
-const DEFAULT_CHORD_DURATION_MS = 1500;
+
+/** 3/4 measure at 180 BPM: 3 quarter notes × (60000/180)ms ≈ 1000ms. */
+const DEFAULT_CHORD_DURATION_MS = 1000;
+
+/**
+ * A joropo's harmonic rhythm vamps on the dominant rather than walking
+ * the circle once — "A7, A7, D, G, A7" (or "A7, A7, Dm, Gm, A7" in the
+ * minor circle). Expressed as roles, not raw array indices, so the
+ * pattern stays correct even if `circle.chords`' own order changes
+ * again later.
+ */
+type ChordRole = "dominant" | "tonic" | "subdominant";
+const JOROPO_VAMP_ROLES: readonly ChordRole[] = [
+  "dominant",
+  "dominant",
+  "tonic",
+  "subdominant",
+  "dominant",
+];
+
+function roleOf(chordId: string): ChordRole {
+  if (chordId === "la-con-septima") return "dominant";
+  if (chordId.startsWith("re-")) return "tonic";
+  return "subdominant";
+}
 
 /**
  * Resolves after `ms` milliseconds OR rejects immediately if the signal
@@ -98,10 +124,13 @@ export async function playChord(
 }
 
 /**
- * Walk the three chords of `circle` in order, each a full `playChord`
- * strike, with `chordDurationMs` (default 1500) of silence between
- * chords. Concurrency: single-sequence — the caller aborts the
- * previous run's signal before starting a new one (mirrors
+ * Play `circle` as a joropo dominant vamp — A7, A7, tonic, subdominant,
+ * A7 (`JOROPO_VAMP_ROLES`) — each chord a full `playChord` strike held
+ * for `chordDurationMs` (default one 3/4 measure, ~1000ms). The
+ * dominant strikes twice, so its `ChordFretboard` flashes twice per
+ * pass — the same visual re-trigger a repeated `anim-target` publish
+ * always produces. Concurrency: single-sequence — the caller aborts
+ * the previous run's signal before starting a new one (mirrors
  * ScaleSwitcher's onTuningClick$/onScaleClick$ pattern).
  */
 export async function playCircleSequence(
@@ -113,8 +142,12 @@ export async function playCircleSequence(
     onStatus,
     chordDurationMs = DEFAULT_CHORD_DURATION_MS,
   } = opts;
-  for (const chord of circle.chords) {
+  const chordsByRole: Record<ChordRole, Chord> = Object.fromEntries(
+    circle.chords.map((c) => [roleOf(c.id), c]),
+  ) as Record<ChordRole, Chord>;
+  for (const role of JOROPO_VAMP_ROLES) {
     if (signal?.aborted) return;
+    const chord = chordsByRole[role];
     await playChord(
       chord.voicing.map((v) => v.midi),
       { targetIdPrefix: `chord-${chord.id}`, onStatus, signal },
