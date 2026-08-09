@@ -14,10 +14,11 @@
  * sequential same-JS-task `await`s of `playMidiNote` (no delay, no
  * timer between notes) keep every voice's `startedAt` within the same
  * `ctx.currentTime` sample (REQ-PLAY-002). `playCircleSequence` walks
- * a joropo-style dominant vamp — A7, A7, tonic, subdominant, A7 — over
- * `circle`'s three chords, not a flat once-through. Each chord holds
- * for `chordDurationMs` (default 1000ms — a 3/4 measure at 180 BPM:
- * 3 quarter notes × 333ms ≈ 1000ms, a real joropo's galloping pace).
+ * a joropo-style dominant vamp — A7 A7, tonic tonic, subdominant
+ * subdominant, A7 A7 — over `circle`'s three chords, not a flat
+ * once-through. Each chord holds for `chordDurationMs` (default
+ * 1000ms — a 3/4 measure at 180 BPM: 3 quarter notes × 333ms ≈ 1000ms,
+ * a real joropo's galloping pace).
  *
  * `AUDIO_UNAVAILABLE_MESSAGE` is imported and re-exported BY REFERENCE
  * (never redefined) so every consumer — this module, ChordFretboard,
@@ -56,18 +57,21 @@ const DEFAULT_TARGET_ID_PREFIX = "chord";
 const DEFAULT_CHORD_DURATION_MS = 1000;
 
 /**
- * A joropo's harmonic rhythm vamps on the dominant rather than walking
- * the circle once — "A7, A7, D, G, A7" (or "A7, A7, Dm, Gm, A7" in the
- * minor circle). Expressed as roles, not raw array indices, so the
- * pattern stays correct even if `circle.chords`' own order changes
- * again later.
+ * A joropo's harmonic rhythm vamps in pairs rather than walking the
+ * circle once — "A7 A7, D D, G G, A7 A7" (or "A7 A7, Dm Dm, Gm Gm, A7
+ * A7" in the minor circle). Expressed as roles, not raw array indices,
+ * so the pattern stays correct even if `circle.chords`' own order
+ * changes again later.
  */
 type ChordRole = "dominant" | "tonic" | "subdominant";
 const JOROPO_VAMP_ROLES: readonly ChordRole[] = [
   "dominant",
   "dominant",
   "tonic",
+  "tonic",
   "subdominant",
+  "subdominant",
+  "dominant",
   "dominant",
 ];
 
@@ -124,14 +128,15 @@ export async function playChord(
 }
 
 /**
- * Play `circle` as a joropo dominant vamp — A7, A7, tonic, subdominant,
- * A7 (`JOROPO_VAMP_ROLES`) — each chord a full `playChord` strike held
- * for `chordDurationMs` (default one 3/4 measure, ~1000ms). The
- * dominant strikes twice, so its `ChordFretboard` flashes twice per
- * pass — the same visual re-trigger a repeated `anim-target` publish
- * always produces. Concurrency: single-sequence — the caller aborts
- * the previous run's signal before starting a new one (mirrors
- * ScaleSwitcher's onTuningClick$/onScaleClick$ pattern).
+ * Play `circle` as a joropo vamp — A7 A7, tonic tonic, subdominant
+ * subdominant, A7 A7 (`JOROPO_VAMP_ROLES`, 8 strikes total) — each
+ * chord a full `playChord` strike held for `chordDurationMs` (default
+ * one 3/4 measure, ~1000ms). Every chord strikes twice in a row, so
+ * its `ChordFretboard` flashes twice per pair — the same visual
+ * re-trigger a repeated `anim-target` publish always produces.
+ * Concurrency: single-sequence — the caller aborts the previous run's
+ * signal before starting a new one (mirrors ScaleSwitcher's
+ * onTuningClick$/onScaleClick$ pattern).
  */
 export async function playCircleSequence(
   circle: Circle,

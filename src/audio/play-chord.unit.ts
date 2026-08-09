@@ -168,7 +168,7 @@ describe("playChord — abort (REQ-PLAY-004)", () => {
   });
 });
 
-describe("playCircleSequence — joropo dominant vamp: A7, A7, tonic, subdominant, A7 (REQ-PLAY-005, revised)", () => {
+describe("playCircleSequence — joropo vamp: A7 A7, tonic tonic, subdominant subdominant, A7 A7 (REQ-PLAY-005, revised)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -177,38 +177,36 @@ describe("playCircleSequence — joropo dominant vamp: A7, A7, tonic, subdominan
     vi.useRealTimers();
   });
 
-  it("plays La con séptima, La con séptima, Re mayor, Sol mayor, La con séptima, 1000ms apart by default", async () => {
+  it("plays La con séptima ×2, Re mayor ×2, Sol mayor ×2, La con séptima ×2, 1000ms apart by default", async () => {
     const p = playCircleSequence(JOROPO_D_MAJOR_CIRCLE);
 
+    const expectedByStep = [
+      [57, 64, 73, 79], // A7
+      [57, 64, 73, 79], // A7
+      [57, 62, 69, 78], // D
+      [57, 62, 69, 78], // D
+      [59, 62, 71, 79], // G
+      [59, 62, 71, 79], // G
+      [57, 64, 73, 79], // A7
+      [57, 64, 73, 79], // A7
+    ];
+
     await vi.advanceTimersByTimeAsync(0);
-    expect(playMidiNoteMock.mock.calls.map((c) => c[0])).toEqual([
-      57, 64, 73, 79,
-    ]);
+    expect(playMidiNoteMock.mock.calls.map((c) => c[0])).toEqual(
+      expectedByStep[0],
+    );
 
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(playMidiNoteMock.mock.calls.slice(4).map((c) => c[0])).toEqual([
-      57, 64, 73, 79,
-    ]);
-
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(playMidiNoteMock.mock.calls.slice(8).map((c) => c[0])).toEqual([
-      57, 62, 69, 78,
-    ]);
-
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(playMidiNoteMock.mock.calls.slice(12).map((c) => c[0])).toEqual([
-      59, 62, 71, 79,
-    ]);
-
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(playMidiNoteMock.mock.calls.slice(16).map((c) => c[0])).toEqual([
-      57, 64, 73, 79,
-    ]);
+    for (let step = 1; step < expectedByStep.length; step++) {
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(
+        playMidiNoteMock.mock.calls.slice(step * 4).map((c) => c[0]),
+      ).toEqual(expectedByStep[step]);
+    }
 
     // Trailing gap after the last chord (loop is not special-cased).
     await vi.advanceTimersByTimeAsync(1000);
     await p;
-    expect(playMidiNoteMock).toHaveBeenCalledTimes(20);
+    expect(playMidiNoteMock).toHaveBeenCalledTimes(32);
   });
 
   it("does not start the second chord before 1000ms have elapsed", async () => {
@@ -222,13 +220,12 @@ describe("playCircleSequence — joropo dominant vamp: A7, A7, tonic, subdominan
     await vi.advanceTimersByTimeAsync(1);
     expect(playMidiNoteMock).toHaveBeenCalledTimes(8);
 
-    // Drain the remaining 3 chords + trailing gap (the loop is not
+    // Drain the remaining 6 chords + trailing gap (the loop is not
     // special-cased) so `p` settles instead of leaking a pending
     // sequence into the next test.
-    await vi.advanceTimersByTimeAsync(1000);
-    await vi.advanceTimersByTimeAsync(1000);
-    await vi.advanceTimersByTimeAsync(1000);
-    await vi.advanceTimersByTimeAsync(1000);
+    for (let i = 0; i < 7; i++) {
+      await vi.advanceTimersByTimeAsync(1000);
+    }
     await p;
   });
 
@@ -245,10 +242,9 @@ describe("playCircleSequence — joropo dominant vamp: A7, A7, tonic, subdominan
     await vi.advanceTimersByTimeAsync(1);
     expect(playMidiNoteMock).toHaveBeenCalledTimes(8);
 
-    await vi.advanceTimersByTimeAsync(700);
-    await vi.advanceTimersByTimeAsync(700);
-    await vi.advanceTimersByTimeAsync(700);
-    await vi.advanceTimersByTimeAsync(700);
+    for (let i = 0; i < 7; i++) {
+      await vi.advanceTimersByTimeAsync(700);
+    }
     await p;
   });
 });
