@@ -391,6 +391,20 @@ const STYLES = `
   }
 
   @media (max-width: 640px) {
+    /* The fretboard is the page's primary learning surface here —
+       tighten everything above it (card padding, the role label +
+       chord name + play-button stack) so it claims as much of the
+       screen as it can, matching /acordes's own mobile chrome cuts. */
+    .chord-carousel {
+      padding: var(--space-2) var(--space-3);
+      gap: var(--space-2);
+    }
+    .chord-carousel__slide {
+      gap: var(--space-1);
+    }
+    .chord-carousel__role {
+      font-size: 0.6875rem;
+    }
     .chord-carousel__nav {
       width: 2rem;
       height: 2rem;

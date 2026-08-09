@@ -58,6 +58,20 @@ const DEFAULT_TONO: Key = "re";
 const DEFAULT_QUALITY: CircleQuality = "mayor";
 const QUALITIES: readonly CircleQuality[] = ["mayor", "menor"];
 
+/** Solid play triangle — see ChordFretboard's own PlayIcon for the same mobile icon-button rationale. */
+function PlayIcon() {
+  return (
+    <svg
+      class="btn-circle__icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M7 4.5v15l13-7.5-13-7.5z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default component$(() => {
   useStylesScoped$(STYLES);
 
@@ -190,7 +204,8 @@ export default component$(() => {
             aria-label="Reproducir círculo completo"
             onClick$={onPlayCircleClick$}
           >
-            Tocar círculo completo
+            <PlayIcon />
+            <span class="btn-circle__label">Tocar círculo completo</span>
           </button>
 
           <p
@@ -406,6 +421,10 @@ const STYLES = `
   }
 
   .btn-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
     font-family: var(--font-body);
     font-size: var(--fs-label);
     font-weight: 500;
@@ -419,6 +438,14 @@ const STYLES = `
     transition:
       background-color var(--motion-fast) var(--ease-printed),
       color var(--motion-fast) var(--ease-printed);
+  }
+
+  /* Same ships-always-paints-conditionally treatment as ChordFretboard's PlayIcon. */
+  .btn-circle__icon {
+    display: none;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
   }
 
   .btn-circle:hover:not(:disabled),
@@ -472,8 +499,28 @@ const STYLES = `
   }
 
   @media (max-width: 640px) {
+    /* The fretboard is the page's primary learning surface on a
+       phone — every rule below trims chrome ABOVE it (tighter
+       rhythm, a smaller lede, a redundant summary line dropped, icon
+       buttons instead of wide text ones) so it reads as the
+       dominant element instead of one more stacked card. */
     .acordes {
       padding: var(--space-3) var(--space-2);
+      gap: var(--space-3);
+    }
+    .acordes__lede {
+      font-size: 0.8125rem;
+      max-width: 34ch;
+    }
+    .controls-frame {
+      padding: var(--space-2) var(--space-3);
+      gap: var(--space-2);
+    }
+    /* Redundant on a phone: the active tono letter + the Mayor/Menor
+       toggle already state this; a screen reader gets the same fact
+       from each control's own aria-checked state. */
+    .current-circle {
+      display: none;
     }
     .quality-selector {
       gap: var(--space-3);
@@ -483,6 +530,25 @@ const STYLES = `
     }
     .tono-letter {
       font-size: clamp(2.25rem, 8vw, 3.5rem);
+    }
+    .btn-circle {
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+    }
+    .btn-circle__icon {
+      display: block;
+    }
+    .btn-circle__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+    .carousel-frame {
+      padding-bottom: var(--space-3);
     }
   }
 `;
