@@ -115,14 +115,14 @@ const SOL_MENOR: Chord = {
 };
 
 export const JOROPO_D_MAJOR: readonly Chord[] = [
-  RE_MAYOR,
   LA_CON_SEPTIMA,
+  RE_MAYOR,
   SOL_MAYOR,
 ];
 
 export const JOROPO_D_MINOR: readonly Chord[] = [
-  RE_MENOR,
   LA_CON_SEPTIMA,
+  RE_MENOR,
   SOL_MENOR,
 ];
 

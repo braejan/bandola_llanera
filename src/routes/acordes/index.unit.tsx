@@ -42,13 +42,13 @@ async function renderAcordes() {
 }
 
 describe("/acordes — renders the default (Mayor) circle", () => {
-  it("renders exactly 3 ChordFretboard instances for Re mayor, La con séptima, Sol mayor", async () => {
+  it("renders exactly 3 ChordFretboard instances for La con séptima, Re mayor, Sol mayor", async () => {
     const { screen } = await renderAcordes();
     const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
     expect(boards.length).toBe(3);
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
-      "re-mayor",
       "la-con-septima",
+      "re-mayor",
       "sol-mayor",
     ]);
   });
@@ -63,7 +63,7 @@ describe("/acordes — renders the default (Mayor) circle", () => {
 });
 
 describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () => {
-  it("clicking the Menor toggle swaps to Re menor, La con séptima, Sol menor", async () => {
+  it("clicking the Menor toggle swaps to La con séptima, Re menor, Sol menor", async () => {
     const { screen, userEvent } = await renderAcordes();
     const menorBtn = screen.querySelector(
       'button[data-circle="joropo-d-menor"]',
@@ -72,8 +72,8 @@ describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () 
 
     const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
-      "re-menor",
       "la-con-septima",
+      "re-menor",
       "sol-menor",
     ]);
   });
@@ -109,8 +109,8 @@ describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () 
 
     const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
-      "re-mayor",
       "la-con-septima",
+      "re-mayor",
       "sol-mayor",
     ]);
   });

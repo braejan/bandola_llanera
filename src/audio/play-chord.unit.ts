@@ -177,17 +177,17 @@ describe("playCircleSequence — walks the 3 chords in order (REQ-PLAY-005)", ()
     vi.useRealTimers();
   });
 
-  it("plays Re mayor, then La con séptima, then Sol mayor, 1500ms apart by default", async () => {
+  it("plays La con séptima, then Re mayor, then Sol mayor, 1500ms apart by default", async () => {
     const p = playCircleSequence(JOROPO_D_MAJOR_CIRCLE);
 
     await vi.advanceTimersByTimeAsync(0);
     expect(playMidiNoteMock.mock.calls.map((c) => c[0])).toEqual([
-      57, 62, 69, 78,
+      57, 64, 73, 79,
     ]);
 
     await vi.advanceTimersByTimeAsync(1500);
     expect(playMidiNoteMock.mock.calls.slice(4).map((c) => c[0])).toEqual([
-      57, 64, 73, 79,
+      57, 62, 69, 78,
     ]);
 
     await vi.advanceTimersByTimeAsync(1500);

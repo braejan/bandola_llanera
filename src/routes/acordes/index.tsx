@@ -161,7 +161,7 @@ export const head: DocumentHead = {
     {
       name: "description",
       content:
-        "Aprende los acordes del círculo armónico de Re en joropo — Re mayor, La con séptima, Sol mayor y sus relativos menores — en un diapason interactivo de bandola llanera.",
+        "Aprende los acordes del círculo armónico de Re en joropo — La con séptima, Re mayor, Sol mayor y sus relativos menores — en un diapason interactivo de bandola llanera.",
     },
   ],
 };
