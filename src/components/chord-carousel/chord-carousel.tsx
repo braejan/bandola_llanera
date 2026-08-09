@@ -395,14 +395,5 @@ const STYLES = `
       width: 2rem;
       height: 2rem;
     }
-
-    /* On a phone, this is a social-feed swipe: the big chord name IS
-       the content, and the fretboard is reference detail underneath
-       it — deliberately smaller and centered, not stretched to fill
-       the slide the way it does on desktop. */
-    .chord-carousel__fretboard-scroll {
-      max-width: 80%;
-      margin: 0 auto;
-    }
   }
 `;

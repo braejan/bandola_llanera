@@ -482,7 +482,7 @@ describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised
     expect(a4First).toBeLessThan(e5First);
   });
 
-  it("within the E5 row, frets run 11 -> 0 left to right (wider than Diapason's 8-column FRET_COLUMNS, to fit every tono's voicing)", async () => {
+  it("within the E5 row, frets run 7 -> 0 left to right, matching Diapason's FRET_COLUMNS", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={RE_MAYOR} />);
     const row = screen.querySelector(
@@ -491,7 +491,7 @@ describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised
     expect(row).not.toBeNull();
     const cells = Array.from(row!.querySelectorAll(".chord-fret"));
     const frets = cells.map((c) => Number(c.getAttribute("data-fret")));
-    expect(frets).toEqual([11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
+    expect(frets).toEqual([7, 6, 5, 4, 3, 2, 1, 0]);
   });
 
   it("the open string (fret 0) carries the chord-fret--open differentiator class", async () => {
@@ -507,7 +507,7 @@ describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised
     expect(frettedCell.classList.contains("chord-fret--open")).toBe(false);
   });
 
-  it("renders a fret-number ruler below the neck, numbered 11 down to 0", async () => {
+  it("renders a fret-number ruler below the neck, numbered 7 down to 0", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={RE_MAYOR} />);
     const header = screen.querySelector(".chord-fretboard__fret-header");
@@ -515,20 +515,7 @@ describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised
     const nums = Array.from(
       header!.querySelectorAll(".chord-fretboard__fret-num"),
     ).map((el) => el.textContent?.trim());
-    expect(nums).toEqual([
-      "11",
-      "10",
-      "9",
-      "8",
-      "7",
-      "6",
-      "5",
-      "4",
-      "3",
-      "2",
-      "1",
-      "0",
-    ]);
+    expect(nums).toEqual(["7", "6", "5", "4", "3", "2", "1", "0"]);
   });
 });
 

@@ -65,12 +65,15 @@ interface ChordFretboardProps {
 // matches Diapason's physical top-to-bottom order exactly.
 const STRING_ORDER: readonly StringId[] = ["A3", "D4", "A4", "E5"];
 
-// Fret 11 (high, body end) on the left, fret 0 (open string, nut) on
-// the right. Wider than Diapason's 8-column FRET_COLUMNS: the
-// role-based transposition formula in `music/chords.ts` can land any
-// of the 12 tonos' voicings anywhere in 0..11, so every fret the
-// formula can produce must be on-screen (REQ: never clip a note).
-const FRET_COLUMNS = [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] as const;
+// Fret 7 (high, body end) on the left, fret 0 (open string, nut) on
+// the right — matches Diapason's FRET_COLUMNS. The role-based
+// transposition formula in `music/chords.ts` can land a voicing
+// anywhere in 0..11 for tonos far from Re; showing only the first 7
+// frets is a deliberate, temporary scope cut (not every generated
+// voicing is fully visible yet) traded for a simple, non-scrolling
+// board at every screen size. A dot beyond fret 7 just doesn't
+// render — no cell exists for it.
+const FRET_COLUMNS = [7, 6, 5, 4, 3, 2, 1, 0] as const;
 
 const OPEN_MIDI: Record<StringId, number> = {
   A3: 57,
@@ -334,17 +337,7 @@ const STYLES = `
 
   .chord-fretboard__row {
     display: grid;
-    /* minmax floor, not a bare 1fr: in a narrow container (the mobile
-       carousel's shrunk fretboard slot) the columns should stop
-       shrinking at a legible size and let the container scroll
-       horizontally to reveal the rest of the neck, instead of
-       squeezing all 12 columns down to illegible slivers. Neither
-       the board nor this row has its own width cap, so once the 12
-       columns hit their 30px floor the row simply grows past its
-       container's width — the parent .chord-carousel__fretboard-
-       scroll's overflow-x:auto (or a plain page scrollbar, when
-       ChordFretboard is used standalone) takes it from there. */
-    grid-template-columns: repeat(12, minmax(30px, 1fr));
+    grid-template-columns: repeat(8, 1fr);
     gap: 2px;
     align-items: center;
     position: relative;
@@ -494,17 +487,7 @@ const STYLES = `
      column grid, so both instruments read as one system). */
   .chord-fretboard__fret-header {
     display: grid;
-    /* minmax floor, not a bare 1fr: in a narrow container (the mobile
-       carousel's shrunk fretboard slot) the columns should stop
-       shrinking at a legible size and let the container scroll
-       horizontally to reveal the rest of the neck, instead of
-       squeezing all 12 columns down to illegible slivers. Neither
-       the board nor this row has its own width cap, so once the 12
-       columns hit their 30px floor the row simply grows past its
-       container's width — the parent .chord-carousel__fretboard-
-       scroll's overflow-x:auto (or a plain page scrollbar, when
-       ChordFretboard is used standalone) takes it from there. */
-    grid-template-columns: repeat(12, minmax(30px, 1fr));
+    grid-template-columns: repeat(8, 1fr);
     gap: 2px;
     border-top: 1px solid var(--color-ink);
     padding-top: 3px;
