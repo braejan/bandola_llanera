@@ -95,11 +95,11 @@ describe("ChordCarousel — renders all 3 slides, one active", () => {
     expect(names).toEqual(["A7", "D", "G"]);
   });
 
-  it("translates the track by -activeIndex * 100%", async () => {
+  it("translates the track by -activeIndex * 100% (plus a 0% live-drag offset at rest)", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness initialIndex={2} />);
     const track = screen.querySelector(".chord-carousel__track") as HTMLElement;
-    expect(track.style.transform).toBe("translateX(-200%)");
+    expect(track.style.transform).toBe("translateX(calc(-200% + 0%))");
   });
 
   it("renders one ChordFretboard per slide", async () => {
@@ -187,15 +187,35 @@ describe("ChordCarousel — keyboard navigation", () => {
   });
 });
 
+/**
+ * happy-dom (the test DOM) never runs a layout engine, so
+ * getBoundingClientRect() always reports 0 for a real element — the
+ * component's drag math divides by that width, so tests must stub it
+ * to a realistic pixel value to exercise the fraction-based threshold
+ * deterministically.
+ */
+function stubTrackClipWidth(
+  screen: { querySelector: (sel: string) => Element | null },
+  width: number,
+): void {
+  const el = screen.querySelector(
+    ".chord-carousel__track-clip",
+  ) as HTMLElement;
+  el.getBoundingClientRect = () =>
+    ({ width, height: 0, top: 0, left: 0, right: width, bottom: 0 }) as DOMRect;
+}
+
 describe("ChordCarousel — swipe/drag gesture", () => {
-  it("a leftward drag past the threshold advances to the next slide", async () => {
+  it("a leftward drag past the threshold (18% of the track width) advances to the next slide", async () => {
     const { screen, render, userEvent } = await createDOM();
     await render(<TestHarness initialIndex={0} />);
+    stubTrackClipWidth(screen, 400); // threshold = 72px
     const viewport = screen.querySelector(
       ".chord-carousel__viewport",
     ) as HTMLElement;
     await userEvent(viewport, "pointerdown", { clientX: 300 });
-    await userEvent(viewport, "pointerup", { clientX: 250 });
+    await userEvent(viewport, "pointermove", { clientX: 200 }); // -100px, live-follow updates the offset
+    await userEvent(viewport, "pointerup", { clientX: 200 });
     expect(
       screen.querySelector('[data-testid="active-index"]')?.textContent,
     ).toBe("1");
@@ -204,10 +224,12 @@ describe("ChordCarousel — swipe/drag gesture", () => {
   it("a rightward drag past the threshold goes to the previous slide", async () => {
     const { screen, render, userEvent } = await createDOM();
     await render(<TestHarness initialIndex={1} />);
+    stubTrackClipWidth(screen, 400); // threshold = 72px
     const viewport = screen.querySelector(
       ".chord-carousel__viewport",
     ) as HTMLElement;
     await userEvent(viewport, "pointerdown", { clientX: 100 });
+    await userEvent(viewport, "pointermove", { clientX: 200 }); // +100px
     await userEvent(viewport, "pointerup", { clientX: 200 });
     expect(
       screen.querySelector('[data-testid="active-index"]')?.textContent,
@@ -217,14 +239,56 @@ describe("ChordCarousel — swipe/drag gesture", () => {
   it("a drag shorter than the threshold does not navigate", async () => {
     const { screen, render, userEvent } = await createDOM();
     await render(<TestHarness initialIndex={0} />);
+    stubTrackClipWidth(screen, 400); // threshold = 72px
     const viewport = screen.querySelector(
       ".chord-carousel__viewport",
     ) as HTMLElement;
     await userEvent(viewport, "pointerdown", { clientX: 300 });
-    await userEvent(viewport, "pointerup", { clientX: 285 });
+    await userEvent(viewport, "pointermove", { clientX: 270 }); // -30px, under 72
+    await userEvent(viewport, "pointerup", { clientX: 270 });
     expect(
       screen.querySelector('[data-testid="active-index"]')?.textContent,
     ).toBe("0");
+  });
+});
+
+describe("ChordCarousel — live drag-follow (social-feed swipe feel)", () => {
+  it("the track's transform tracks the finger in real time DURING the drag, before release", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<TestHarness initialIndex={0} />);
+    stubTrackClipWidth(screen, 400);
+    const viewport = screen.querySelector(
+      ".chord-carousel__viewport",
+    ) as HTMLElement;
+    const track = screen.querySelector(
+      ".chord-carousel__track",
+    ) as HTMLElement;
+
+    await userEvent(viewport, "pointerdown", { clientX: 300 });
+    await userEvent(viewport, "pointermove", { clientX: 260 }); // -40px = -10% of 400px, under the 18% threshold
+    expect(track.style.transform).toBe("translateX(calc(-0% + -10%))");
+
+    // Released short of the threshold — springs back to 0 offset.
+    await userEvent(viewport, "pointerup", { clientX: 260 });
+    expect(track.style.transform).toBe("translateX(calc(-0% + 0%))");
+    expect(
+      screen.querySelector('[data-testid="active-index"]')?.textContent,
+    ).toBe("0");
+  });
+
+  it("disables the track's CSS transition while dragging (data-dragging), re-enables it on release", async () => {
+    const { screen, render, userEvent } = await createDOM();
+    await render(<TestHarness initialIndex={0} />);
+    stubTrackClipWidth(screen, 400);
+    const viewport = screen.querySelector(
+      ".chord-carousel__viewport",
+    ) as HTMLElement;
+
+    await userEvent(viewport, "pointerdown", { clientX: 300 });
+    expect(viewport.getAttribute("data-dragging")).toBe("true");
+
+    await userEvent(viewport, "pointerup", { clientX: 300 });
+    expect(viewport.getAttribute("data-dragging")).toBe("false");
   });
 });
 

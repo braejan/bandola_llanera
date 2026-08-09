@@ -45,7 +45,8 @@ const ROLE_LABEL: Record<ChordRole, string> = {
   subdominant: "Subdominante",
 };
 
-const SWIPE_THRESHOLD_PX = 40;
+/** Fraction of the track's own width a drag must cross to change slides. */
+const SWIPE_THRESHOLD_FRACTION = 0.18;
 
 function ChevronIcon({ direction }: { direction: "prev" | "next" }) {
   const points =
@@ -75,6 +76,9 @@ export const ChordCarousel = component$<ChordCarouselProps>(
 
     const dragStartX = useSignal<number | null>(null);
     const dragActive = useSignal(false);
+    /** Live drag offset as a fraction of the track's own width (-1..1), applied on TOP of the base -activeIndex*100% position so the slide visually follows the finger — the "moving a social feed" feel, not a threshold-then-jump. */
+    const dragOffsetFraction = useSignal(0);
+    const trackClipRef = useSignal<HTMLElement>();
 
     const goTo = $((index: number) => {
       const n = chords.length;
@@ -86,20 +90,32 @@ export const ChordCarousel = component$<ChordCarouselProps>(
       if (disabled) return;
       dragStartX.value = event.clientX;
       dragActive.value = true;
+      dragOffsetFraction.value = 0;
     });
 
-    const onPointerUp$ = $((event: PointerEvent) => {
+    const onPointerMove$ = $((event: PointerEvent) => {
       if (dragStartX.value === null) return;
-      const delta = event.clientX - dragStartX.value;
+      const width = trackClipRef.value?.getBoundingClientRect().width || 1;
+      dragOffsetFraction.value = (event.clientX - dragStartX.value) / width;
+    });
+
+    const onPointerUp$ = $(() => {
+      if (dragStartX.value === null) return;
+      const fraction = dragOffsetFraction.value;
       dragStartX.value = null;
       dragActive.value = false;
-      if (delta <= -SWIPE_THRESHOLD_PX) void goTo(activeIndex + 1);
-      else if (delta >= SWIPE_THRESHOLD_PX) void goTo(activeIndex - 1);
+      dragOffsetFraction.value = 0;
+      if (fraction <= -SWIPE_THRESHOLD_FRACTION) void goTo(activeIndex + 1);
+      else if (fraction >= SWIPE_THRESHOLD_FRACTION) void goTo(activeIndex - 1);
+      // Otherwise the transition (re-enabled now that dragActive is
+      // false) animates the offset back to 0 — a spring-back, exactly
+      // like an unconfirmed swipe on a social feed.
     });
 
     const onPointerCancel$ = $(() => {
       dragStartX.value = null;
       dragActive.value = false;
+      dragOffsetFraction.value = 0;
     });
 
     const onKeyDown$ = $((event: KeyboardEvent) => {
@@ -142,6 +158,7 @@ export const ChordCarousel = component$<ChordCarouselProps>(
           data-dragging={dragActive.value ? "true" : "false"}
           onKeyDown$={onKeyDown$}
           onPointerDown$={onPointerDown$}
+          onPointerMove$={onPointerMove$}
           onPointerUp$={onPointerUp$}
           onPointerCancel$={onPointerCancel$}
         >
@@ -155,10 +172,14 @@ export const ChordCarousel = component$<ChordCarouselProps>(
             <ChevronIcon direction="prev" />
           </button>
 
-          <div class="chord-carousel__track-clip">
+          <div class="chord-carousel__track-clip" ref={trackClipRef}>
             <div
               class="chord-carousel__track"
-              style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+              style={{
+                transform: `translateX(calc(-${activeIndex * 100}% + ${
+                  dragOffsetFraction.value * 100
+                }%))`,
+              }}
             >
               {chords.map((chord, i) => (
                 <div
@@ -373,6 +394,15 @@ const STYLES = `
     .chord-carousel__nav {
       width: 2rem;
       height: 2rem;
+    }
+
+    /* On a phone, this is a social-feed swipe: the big chord name IS
+       the content, and the fretboard is reference detail underneath
+       it — deliberately smaller and centered, not stretched to fill
+       the slide the way it does on desktop. */
+    .chord-carousel__fretboard-scroll {
+      max-width: 80%;
+      margin: 0 auto;
     }
   }
 `;

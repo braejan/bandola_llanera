@@ -243,7 +243,7 @@ describe("/acordes — onChordStart drives the carousel's active slide", () => {
     const track = screen.querySelector(
       ".chord-carousel__track",
     ) as HTMLElement;
-    expect(track.style.transform).toBe("translateX(-200%)");
+    expect(track.style.transform).toBe("translateX(calc(-200% + 0%))");
   });
 });
 

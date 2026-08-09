@@ -334,7 +334,17 @@ const STYLES = `
 
   .chord-fretboard__row {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    /* minmax floor, not a bare 1fr: in a narrow container (the mobile
+       carousel's shrunk fretboard slot) the columns should stop
+       shrinking at a legible size and let the container scroll
+       horizontally to reveal the rest of the neck, instead of
+       squeezing all 12 columns down to illegible slivers. Neither
+       the board nor this row has its own width cap, so once the 12
+       columns hit their 30px floor the row simply grows past its
+       container's width — the parent .chord-carousel__fretboard-
+       scroll's overflow-x:auto (or a plain page scrollbar, when
+       ChordFretboard is used standalone) takes it from there. */
+    grid-template-columns: repeat(12, minmax(30px, 1fr));
     gap: 2px;
     align-items: center;
     position: relative;
@@ -484,7 +494,17 @@ const STYLES = `
      column grid, so both instruments read as one system). */
   .chord-fretboard__fret-header {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    /* minmax floor, not a bare 1fr: in a narrow container (the mobile
+       carousel's shrunk fretboard slot) the columns should stop
+       shrinking at a legible size and let the container scroll
+       horizontally to reveal the rest of the neck, instead of
+       squeezing all 12 columns down to illegible slivers. Neither
+       the board nor this row has its own width cap, so once the 12
+       columns hit their 30px floor the row simply grows past its
+       container's width — the parent .chord-carousel__fretboard-
+       scroll's overflow-x:auto (or a plain page scrollbar, when
+       ChordFretboard is used standalone) takes it from there. */
+    grid-template-columns: repeat(12, minmax(30px, 1fr));
     gap: 2px;
     border-top: 1px solid var(--color-ink);
     padding-top: 3px;
