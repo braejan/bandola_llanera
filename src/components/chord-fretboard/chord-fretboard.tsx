@@ -29,11 +29,16 @@ export { AUDIO_UNAVAILABLE_MESSAGE };
  * instead, reading `data-midi`/`data-string`/`data-fret` off the
  * clicked element exactly like the hook does.
  *
- * Tab order is the OPPOSITE of Diapason's: button first, then
- * E5 -> A4 -> D4 -> A3, ascending fret within each string
- * (REQ-FRET-011) — Diapason's own "headstock first, frets 7->1" shape
- * does not apply here, so STRING_ORDER/FRET_COLUMNS are defined fresh
- * rather than imported.
+ * Orientation MATCHES Diapason's (user-requested fix — the original
+ * REQ-FRET-011 tab order literally mirrored the landing's fretboard on
+ * both axes, which read as upside-down next to it): rows top to bottom
+ * are A3 -> D4 -> A4 -> E5, and frets run 7 -> 0 left to right, nut/open
+ * string on the right — the same physical reading as `diapason.tsx`.
+ * DOM order equals visual order (no CSS `order` trick needed here,
+ * unlike Diapason's headstock cell) since there is no separate
+ * open-string cell to reposition. This also means focus order now
+ * follows the visual reading order top-to-bottom, left-to-right, which
+ * is the better accessibility default.
  *
  * Every voicing in `src/music/chords.ts` has 4 DISTINCT midi values,
  * so the anim-target subscription can locate the matching cell by
@@ -56,12 +61,13 @@ interface ChordFretboardProps {
   onChordPlay?: QRL<() => void>;
 }
 
-// Render order top to bottom: E5 (top) -> A4 -> D4 -> A3 (bottom) —
-// the REVERSE of Diapason's physical top-to-bottom order, per the
-// locked REQ-FRET-011 tab order.
-const STRING_ORDER: readonly StringId[] = ["E5", "A4", "D4", "A3"];
+// Render order top to bottom: A3 (top) -> D4 -> A4 -> E5 (bottom) —
+// matches Diapason's physical top-to-bottom order exactly.
+const STRING_ORDER: readonly StringId[] = ["A3", "D4", "A4", "E5"];
 
-const FRET_COLUMNS = [0, 1, 2, 3, 4, 5, 6, 7] as const;
+// Fret 7 (high, body end) on the left, fret 0 (open string, nut) on
+// the right — matches Diapason's FRET_COLUMNS exactly.
+const FRET_COLUMNS = [7, 6, 5, 4, 3, 2, 1, 0] as const;
 
 const OPEN_MIDI: Record<StringId, number> = {
   A3: 57,
@@ -218,7 +224,10 @@ export const ChordFretboard = component$<ChordFretboardProps>(
                   const cls = [
                     "chord-fret",
                     playable ? "chord-fret--in-chord" : "chord-fret--ghost",
-                  ].join(" ");
+                    fret === 0 ? "chord-fret--open" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
                   const label = playable
                     ? `Cuerda ${stringId}, traste ${fret}, nota ${
                         NOTE_NAME_BY_MIDI[midi] ?? ""
@@ -242,6 +251,14 @@ export const ChordFretboard = component$<ChordFretboardProps>(
               </div>
             );
           })}
+
+          <div class="chord-fretboard__fret-header" aria-hidden="true">
+            {FRET_COLUMNS.map((fret) => (
+              <div class="chord-fretboard__fret-num" key={`fnum-${fret}`}>
+                {fret}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -375,6 +392,13 @@ const STYLES = `
     border-right: 1.5px solid var(--color-ink);
   }
 
+  /* Open string (fret 0, the nut) — a subtle ink wash differentiates
+     "no fret pressed" from a fretted position, without introducing a
+     new color (value copied from Diapason's .fret--preferred wash). */
+  .chord-fret--open {
+    background: rgba(26, 20, 16, 0.04);
+  }
+
   .chord-fret-note {
     position: relative;
     z-index: 3;
@@ -429,6 +453,27 @@ const STYLES = `
 
   .chord-fret--playing {
     animation: fret-pulse var(--motion-click) var(--ease-printed);
+  }
+
+  /* Fret-number ruler — thin reference line below the neck, matching
+     Diapason's .diapason-fret-header exactly (same tokens, same
+     column grid, so both instruments read as one system). */
+  .chord-fretboard__fret-header {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    border-top: 1px solid var(--color-ink);
+    padding-top: 3px;
+    margin-top: 2px;
+  }
+
+  .chord-fretboard__fret-num {
+    text-align: center;
+    font-size: 0.625rem;
+    color: var(--color-ink-tint);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    line-height: 1;
   }
 
   @media (prefers-reduced-motion: reduce) {

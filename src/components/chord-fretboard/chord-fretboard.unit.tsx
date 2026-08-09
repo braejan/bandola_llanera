@@ -14,7 +14,12 @@
  *     (REQ-FRET-008)
  *   - Diapason string CSS custom properties reuse (REQ-FRET-009)
  *   - AudioStatusContext onStatus wiring (REQ-FRET-010)
- *   - focus order: button, then E5 -> A4 -> D4 -> A3 (REQ-FRET-011)
+ *   - DOM/focus order matches Diapason's visual orientation: button,
+ *     then A3 -> D4 -> A4 -> E5, frets 7 -> 0 within each string
+ *     (REQ-FRET-011, revised post-archive to fix the fretboard reading
+ *     upside-down next to the landing's Diapason)
+ *   - open string (fret 0) is visually differentiated, and every fret
+ *     column is numbered via a ruler below the neck
  *   - reduced-motion collapses the flash (REQ-FRET-012)
  */
 import { $, component$, useContextProvider, useSignal } from "@builder.io/qwik";
@@ -451,33 +456,33 @@ describe("ChordFretboard — AudioStatusContext onStatus wiring (REQ-FRET-010)",
   });
 });
 
-describe("ChordFretboard — focus order (REQ-FRET-011)", () => {
-  it("orders cells E5 -> A4 -> D4 -> A3 in the DOM, ascending fret within each string", async () => {
+describe("ChordFretboard — orientation matches Diapason (REQ-FRET-011, revised)", () => {
+  it("orders cells A3 -> D4 -> A4 -> E5 in the DOM, matching Diapason's row order", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={RE_MAYOR} />);
     const all = Array.from(screen.querySelectorAll("button"));
     const btnIdx = all.findIndex((b) =>
       b.classList.contains("chord-fretboard__play-all"),
     );
-    const e5First = all.findIndex(
-      (b) => b.getAttribute("data-string") === "E5",
-    );
-    const a4First = all.findIndex(
-      (b) => b.getAttribute("data-string") === "A4",
+    const a3First = all.findIndex(
+      (b) => b.getAttribute("data-string") === "A3",
     );
     const d4First = all.findIndex(
       (b) => b.getAttribute("data-string") === "D4",
     );
-    const a3First = all.findIndex(
-      (b) => b.getAttribute("data-string") === "A3",
+    const a4First = all.findIndex(
+      (b) => b.getAttribute("data-string") === "A4",
     );
-    expect(btnIdx).toBeLessThan(e5First);
-    expect(e5First).toBeLessThan(a4First);
-    expect(a4First).toBeLessThan(d4First);
-    expect(d4First).toBeLessThan(a3First);
+    const e5First = all.findIndex(
+      (b) => b.getAttribute("data-string") === "E5",
+    );
+    expect(btnIdx).toBeLessThan(a3First);
+    expect(a3First).toBeLessThan(d4First);
+    expect(d4First).toBeLessThan(a4First);
+    expect(a4First).toBeLessThan(e5First);
   });
 
-  it("within the E5 row, frets ascend from 0 to 7", async () => {
+  it("within the E5 row, frets run 7 -> 0 left to right, matching Diapason's FRET_COLUMNS", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={RE_MAYOR} />);
     const row = screen.querySelector(
@@ -486,7 +491,31 @@ describe("ChordFretboard — focus order (REQ-FRET-011)", () => {
     expect(row).not.toBeNull();
     const cells = Array.from(row!.querySelectorAll(".chord-fret"));
     const frets = cells.map((c) => Number(c.getAttribute("data-fret")));
-    expect(frets).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(frets).toEqual([7, 6, 5, 4, 3, 2, 1, 0]);
+  });
+
+  it("the open string (fret 0) carries the chord-fret--open differentiator class", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness chord={RE_MAYOR} />);
+    const openCell = screen.querySelector(
+      '.chord-fret[data-string="A3"][data-fret="0"]',
+    ) as HTMLElement;
+    const frettedCell = screen.querySelector(
+      '.chord-fret[data-string="A3"][data-fret="5"]',
+    ) as HTMLElement;
+    expect(openCell.classList.contains("chord-fret--open")).toBe(true);
+    expect(frettedCell.classList.contains("chord-fret--open")).toBe(false);
+  });
+
+  it("renders a fret-number ruler below the neck, numbered 7 down to 0", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness chord={RE_MAYOR} />);
+    const header = screen.querySelector(".chord-fretboard__fret-header");
+    expect(header).not.toBeNull();
+    const nums = Array.from(
+      header!.querySelectorAll(".chord-fretboard__fret-num"),
+    ).map((el) => el.textContent?.trim());
+    expect(nums).toEqual(["7", "6", "5", "4", "3", "2", "1", "0"]);
   });
 });
 
