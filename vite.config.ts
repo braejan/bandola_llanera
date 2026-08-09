@@ -23,8 +23,8 @@ export default defineConfig(({ command, mode }): UserConfig => {
   return {
     plugins: [
       qwikCity({
-        // GH Pages serves this repo at https://braejan.github.io/bandola_llanera/
-        basePathname: "/bandola_llanera/",
+        // Custom domain bandola.witsaba.com serves this site at the root.
+        basePathname: "/",
       }),
       qwikVite({
         // Disable dev-only overlays so screenshots stay clean.

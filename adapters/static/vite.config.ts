@@ -12,7 +12,7 @@ export default extendConfig(baseConfig, () => {
     },
     plugins: [
       staticAdapter({
-        origin: "https://braejan.github.io",
+        origin: "https://bandola.witsaba.com",
       }),
     ],
   };
