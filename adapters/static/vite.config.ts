@@ -12,7 +12,7 @@ export default extendConfig(baseConfig, () => {
     },
     plugins: [
       staticAdapter({
-        origin: "https://bandolallanera.qwik.dev",
+        origin: "https://braejan.github.io/bandola_llanera",
       }),
     ],
   };
