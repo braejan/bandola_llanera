@@ -187,7 +187,7 @@ describe("playCircleSequence — walks the 3 chords in order (REQ-PLAY-005)", ()
 
     await vi.advanceTimersByTimeAsync(1500);
     expect(playMidiNoteMock.mock.calls.slice(4).map((c) => c[0])).toEqual([
-      57, 67, 73, 76,
+      57, 64, 73, 79,
     ]);
 
     await vi.advanceTimersByTimeAsync(1500);

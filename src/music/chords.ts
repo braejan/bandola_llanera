@@ -58,10 +58,9 @@ const RE_MAYOR: Chord = {
 };
 
 /**
- * The dominant of both circles — a single shared object. Corrected full
- * A7 voicing (A3 fret 0, D4 fret 5, A4 fret 4, E5 fret 0), confirmed by
- * the bandolista: the original D4-fret-1 voicing was not physically
- * reachable at the intended pitch (see spec key learning #1).
+ * The dominant of both circles — a single shared object. Locked A7
+ * voicing confirmed by the bandolista: A3 fret 0 (A), D4 fret 2 (E),
+ * A4 fret 4 (C♯), E5 fret 3 (G).
  */
 const LA_CON_SEPTIMA: Chord = {
   id: "la-con-septima",
@@ -70,9 +69,9 @@ const LA_CON_SEPTIMA: Chord = {
   intervals: [0, 4, 7, 10],
   voicing: [
     { stringId: "A3", fret: 0, midi: 57 },
-    { stringId: "D4", fret: 5, midi: 67 },
+    { stringId: "D4", fret: 2, midi: 64 },
     { stringId: "A4", fret: 4, midi: 73 },
-    { stringId: "E5", fret: 0, midi: 76 },
+    { stringId: "E5", fret: 3, midi: 79 },
   ],
 };
 

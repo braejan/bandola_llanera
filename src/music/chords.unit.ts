@@ -84,20 +84,20 @@ describe("chords — locked MIDI voicings (REQ-DATA-003)", () => {
     expect(sortedMidis(JOROPO_D_MAJOR[0])).toEqual([57, 62, 69, 78]);
   });
 
-  it("la-con-septima (corrected A7) voicing is exactly [57, 67, 73, 76] and shared between circles", () => {
-    expect(sortedMidis(JOROPO_D_MAJOR[1])).toEqual([57, 67, 73, 76]);
-    expect(sortedMidis(JOROPO_D_MINOR[1])).toEqual([57, 67, 73, 76]);
+  it("la-con-septima voicing is exactly [57, 64, 73, 79] and shared between circles", () => {
+    expect(sortedMidis(JOROPO_D_MAJOR[1])).toEqual([57, 64, 73, 79]);
+    expect(sortedMidis(JOROPO_D_MINOR[1])).toEqual([57, 64, 73, 79]);
   });
 
-  it("la-con-septima is the CORRECTED full A7 voicing (A3-0, D4-5, A4-4, E5-0)", () => {
+  it("la-con-septima is the locked A7 voicing (A3-0, D4-2, A4-4, E5-3)", () => {
     const chord = JOROPO_D_MAJOR[1];
     const byString = Object.fromEntries(
       chord.voicing.map((v) => [v.stringId, v.fret]),
     ) as Record<StringId, number>;
     expect(byString.A3).toBe(0);
-    expect(byString.D4).toBe(5);
+    expect(byString.D4).toBe(2);
     expect(byString.A4).toBe(4);
-    expect(byString.E5).toBe(0);
+    expect(byString.E5).toBe(3);
   });
 
   it("sol-mayor voicing sorted ascending is exactly [62, 67, 69, 78]", () => {
@@ -198,14 +198,14 @@ describe("chords — MIDI invariant midi = open + fret (REQ-DATA-008)", () => {
     }
   });
 
-  it("holds explicitly for the corrected la-con-septima voicing (57+0, 62+5, 69+4, 76+0)", () => {
+  it("holds explicitly for the la-con-septima voicing (57+0, 62+2, 69+4, 76+3)", () => {
     const chord = JOROPO_D_MAJOR[1];
     const byString = Object.fromEntries(
       chord.voicing.map((v) => [v.stringId, v.midi]),
     ) as Record<StringId, number>;
     expect(byString.A3).toBe(57);
-    expect(byString.D4).toBe(67);
+    expect(byString.D4).toBe(64);
     expect(byString.A4).toBe(73);
-    expect(byString.E5).toBe(76);
+    expect(byString.E5).toBe(79);
   });
 });

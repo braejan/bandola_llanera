@@ -103,12 +103,12 @@ const PC_NAMES = [
 const NOTE_NAME_BY_MIDI: Readonly<Record<number, string>> = {
   57: "La",
   62: "Re",
+  64: "Mi",
   65: "Fa",
   67: "Sol",
   69: "La",
   70: "Si bemol",
   73: "Do sostenido",
-  76: "Mi",
   77: "Fa",
   78: "Fa sostenido",
   79: "Sol",

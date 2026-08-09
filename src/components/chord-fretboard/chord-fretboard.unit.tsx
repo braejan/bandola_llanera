@@ -314,18 +314,18 @@ describe("ChordFretboard — locked Spanish cell aria-labels (REQ-FRET-008)", ()
     }
   });
 
-  it("La con séptima (corrected) cells carry the correct Spanish labels", async () => {
+  it("La con séptima cells carry the correct Spanish labels", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness chord={LA_CON_SEPTIMA} />);
     const expected = [
       ["A3", "0", "Cuerda A3, traste 0, nota La, acorde La con séptima"],
-      ["D4", "5", "Cuerda D4, traste 5, nota Sol, acorde La con séptima"],
+      ["D4", "2", "Cuerda D4, traste 2, nota Mi, acorde La con séptima"],
       [
         "A4",
         "4",
         "Cuerda A4, traste 4, nota Do sostenido, acorde La con séptima",
       ],
-      ["E5", "0", "Cuerda E5, traste 0, nota Mi, acorde La con séptima"],
+      ["E5", "3", "Cuerda E5, traste 3, nota Sol, acorde La con séptima"],
     ];
     for (const [str, fret, label] of expected) {
       const cell = screen.querySelector(
