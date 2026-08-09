@@ -9,6 +9,7 @@ import {
 } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
 import { ChordFretboard } from "../../components/chord-fretboard/chord-fretboard";
+import { Footer } from "../../components/footer/footer";
 import { AudioStatusContext } from "../../audio/audio-status-context";
 import { playCircleSequence } from "../../audio/play-chord";
 import { CIRCLES, type CircleId } from "../../music/chords";
@@ -16,7 +17,9 @@ import { CIRCLES, type CircleId } from "../../music/chords";
 /**
  * /acordes — integrates all 4 capabilities (ChordData, ChordFretboard,
  * ChordPlayback, StudentMenu). StudentMenu is not rendered here — it
- * lives in `src/routes/layout.tsx`, above every route.
+ * lives in `src/routes/layout.tsx`, above every route. `Footer` IS
+ * rendered here (page-local, mirrors the landing route's own
+ * `<main>` + `<Footer />` sibling pattern — Footer is not global).
  *
  * Owns `circleId` + `audioStatus` and PROVIDES `AudioStatusContext` —
  * mirrors the ScaleSwitcher precedent (route/page-level component owns
@@ -86,65 +89,69 @@ export default component$(() => {
     CIRCLES.find((c) => c.id === circleId.value) ?? CIRCLES[0];
 
   return (
-    <main class="acordes" aria-label="Acordes del círculo de Re">
-      <h1 class="acordes__title font-display">Acordes</h1>
-      <p class="acordes__lede">
-        El círculo armónico de Re en joropo — toca cada acorde completo o nota
-        por nota.
-      </p>
+    <>
+      <main class="acordes" aria-label="Acordes del círculo de Re">
+        <h1 class="acordes__title font-display">Acordes</h1>
+        <p class="acordes__lede">
+          El círculo armónico de Re en joropo — toca cada acorde completo o
+          nota por nota.
+        </p>
 
-      <div class="controls-frame">
-        <div class="circle-selector" role="radiogroup" aria-label="Círculo">
-          {CIRCLES.map((circle) => {
-            const active = circle.id === circleId.value;
-            return (
-              <button
-                key={circle.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                class={["circle", active ? "circle--active" : ""].join(" ")}
-                data-circle={circle.id}
-                onClick$={() => onCircleToggleClick$(circle.id)}
-              >
-                <span class="circle-label">
-                  {CIRCLE_SHORT_LABEL[circle.id]}
-                </span>
-              </button>
-            );
-          })}
+        <div class="controls-frame">
+          <div class="circle-selector" role="radiogroup" aria-label="Círculo">
+            {CIRCLES.map((circle) => {
+              const active = circle.id === circleId.value;
+              return (
+                <button
+                  key={circle.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  class={["circle", active ? "circle--active" : ""].join(" ")}
+                  data-circle={circle.id}
+                  onClick$={() => onCircleToggleClick$(circle.id)}
+                >
+                  <span class="circle-label">
+                    {CIRCLE_SHORT_LABEL[circle.id]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <p class="current-circle" aria-label="Círculo actual">
+            {currentCircle.label}
+          </p>
+
+          <button
+            type="button"
+            class="btn-circle"
+            disabled={isPlayingCircle.value}
+            aria-label="Reproducir círculo completo"
+            onClick$={onPlayCircleClick$}
+          >
+            Tocar círculo completo
+          </button>
+
+          <p
+            class="audio-status"
+            role="status"
+            aria-live="polite"
+            data-audio-status={audioStatus.value ? "active" : "idle"}
+          >
+            {audioStatus.value}
+          </p>
         </div>
 
-        <p class="current-circle" aria-label="Círculo actual">
-          {currentCircle.label}
-        </p>
+        <div class="chords">
+          {currentCircle.chords.map((chord) => (
+            <ChordFretboard chord={chord} key={chord.id} />
+          ))}
+        </div>
+      </main>
 
-        <button
-          type="button"
-          class="btn-circle"
-          disabled={isPlayingCircle.value}
-          aria-label="Reproducir círculo completo"
-          onClick$={onPlayCircleClick$}
-        >
-          Tocar círculo completo
-        </button>
-
-        <p
-          class="audio-status"
-          role="status"
-          aria-live="polite"
-          data-audio-status={audioStatus.value ? "active" : "idle"}
-        >
-          {audioStatus.value}
-        </p>
-      </div>
-
-      <div class="chords">
-        {currentCircle.chords.map((chord) => (
-          <ChordFretboard chord={chord} key={chord.id} />
-        ))}
-      </div>
-    </main>
+      <Footer />
+    </>
   );
 });
 

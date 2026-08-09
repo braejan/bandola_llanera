@@ -190,3 +190,25 @@ describe("/acordes — Spanish head meta", () => {
     expect(descriptionMetas[0]?.content).toMatch(/acorde|círculo|joropo/i);
   });
 });
+
+describe("/acordes — Footer mount", () => {
+  it('renders <footer class="broadsheet-footer" role="contentinfo"> AFTER <main class="acordes">, not inside it', async () => {
+    const { screen } = await renderAcordes();
+    const main = screen.querySelector("main.acordes");
+    const footer = screen.querySelector("footer.broadsheet-footer");
+    expect(main).toBeTruthy();
+    expect(footer).toBeTruthy();
+    expect(footer!.getAttribute("role")).toBe("contentinfo");
+    expect(main!.contains(footer!)).toBe(false);
+    const position = main!.compareDocumentPosition(footer!);
+    expect(position & 4).toBeTruthy();
+  });
+
+  it("shows the footer credit text on /acordes", async () => {
+    const { screen } = await renderAcordes();
+    const text = screen.textContent ?? "";
+    expect(text).toContain(
+      "Creado por braejan desde los llanos de Casanare 🇨🇴 con 💛💙❤️ para estudiantes de la bandola llanera",
+    );
+  });
+});
