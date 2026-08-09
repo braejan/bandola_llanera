@@ -59,38 +59,38 @@ describe("chords — data structure (REQ-DATA-001)", () => {
   });
 });
 
-describe("chords — circles, major first then minor (REQ-DATA-002)", () => {
-  it("JOROPO_D_MAJOR has exactly [re-mayor, la-con-septima, sol-mayor] in order", () => {
+describe("chords — circles, dominant first then tonic then subdominant (REQ-DATA-002)", () => {
+  it("JOROPO_D_MAJOR has exactly [la-con-septima, re-mayor, sol-mayor] in order", () => {
     expect(JOROPO_D_MAJOR.length).toBe(3);
-    expect(JOROPO_D_MAJOR[0].id).toBe("re-mayor");
-    expect(JOROPO_D_MAJOR[1].id).toBe("la-con-septima");
+    expect(JOROPO_D_MAJOR[0].id).toBe("la-con-septima");
+    expect(JOROPO_D_MAJOR[1].id).toBe("re-mayor");
     expect(JOROPO_D_MAJOR[2].id).toBe("sol-mayor");
   });
 
-  it("JOROPO_D_MINOR has exactly [re-menor, la-con-septima, sol-menor] in order", () => {
+  it("JOROPO_D_MINOR has exactly [la-con-septima, re-menor, sol-menor] in order", () => {
     expect(JOROPO_D_MINOR.length).toBe(3);
-    expect(JOROPO_D_MINOR[0].id).toBe("re-menor");
-    expect(JOROPO_D_MINOR[1].id).toBe("la-con-septima");
+    expect(JOROPO_D_MINOR[0].id).toBe("la-con-septima");
+    expect(JOROPO_D_MINOR[1].id).toBe("re-menor");
     expect(JOROPO_D_MINOR[2].id).toBe("sol-menor");
   });
 
   it("the dominant (la-con-septima) is the SAME chord reference in both circles", () => {
-    expect(JOROPO_D_MAJOR[1]).toBe(JOROPO_D_MINOR[1]);
+    expect(JOROPO_D_MAJOR[0]).toBe(JOROPO_D_MINOR[0]);
   });
 });
 
 describe("chords — locked MIDI voicings (REQ-DATA-003)", () => {
   it("re-mayor voicing sorted ascending is exactly [57, 62, 69, 78]", () => {
-    expect(sortedMidis(JOROPO_D_MAJOR[0])).toEqual([57, 62, 69, 78]);
+    expect(sortedMidis(JOROPO_D_MAJOR[1])).toEqual([57, 62, 69, 78]);
   });
 
   it("la-con-septima voicing is exactly [57, 64, 73, 79] and shared between circles", () => {
-    expect(sortedMidis(JOROPO_D_MAJOR[1])).toEqual([57, 64, 73, 79]);
-    expect(sortedMidis(JOROPO_D_MINOR[1])).toEqual([57, 64, 73, 79]);
+    expect(sortedMidis(JOROPO_D_MAJOR[0])).toEqual([57, 64, 73, 79]);
+    expect(sortedMidis(JOROPO_D_MINOR[0])).toEqual([57, 64, 73, 79]);
   });
 
   it("la-con-septima is the locked A7 voicing (A3-0, D4-2, A4-4, E5-3)", () => {
-    const chord = JOROPO_D_MAJOR[1];
+    const chord = JOROPO_D_MAJOR[0];
     const byString = Object.fromEntries(
       chord.voicing.map((v) => [v.stringId, v.fret]),
     ) as Record<StringId, number>;
@@ -105,7 +105,7 @@ describe("chords — locked MIDI voicings (REQ-DATA-003)", () => {
   });
 
   it("re-menor voicing sorted ascending is exactly [57, 62, 69, 77]", () => {
-    expect(sortedMidis(JOROPO_D_MINOR[0])).toEqual([57, 62, 69, 77]);
+    expect(sortedMidis(JOROPO_D_MINOR[1])).toEqual([57, 62, 69, 77]);
   });
 
   it("sol-menor voicing sorted ascending is exactly [58, 62, 70, 79]", () => {
@@ -199,7 +199,7 @@ describe("chords — MIDI invariant midi = open + fret (REQ-DATA-008)", () => {
   });
 
   it("holds explicitly for the la-con-septima voicing (57+0, 62+2, 69+4, 76+3)", () => {
-    const chord = JOROPO_D_MAJOR[1];
+    const chord = JOROPO_D_MAJOR[0];
     const byString = Object.fromEntries(
       chord.voicing.map((v) => [v.stringId, v.midi]),
     ) as Record<StringId, number>;

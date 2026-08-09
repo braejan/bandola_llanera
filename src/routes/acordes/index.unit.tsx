@@ -42,13 +42,13 @@ async function renderAcordes() {
 }
 
 describe("/acordes — renders the default (Mayor) circle", () => {
-  it("renders exactly 3 ChordFretboard instances for Re mayor, La con séptima, Sol mayor", async () => {
+  it("renders exactly 3 ChordFretboard instances for La con séptima, Re mayor, Sol mayor", async () => {
     const { screen } = await renderAcordes();
     const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
     expect(boards.length).toBe(3);
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
-      "re-mayor",
       "la-con-septima",
+      "re-mayor",
       "sol-mayor",
     ]);
   });
@@ -63,7 +63,7 @@ describe("/acordes — renders the default (Mayor) circle", () => {
 });
 
 describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () => {
-  it("clicking the Menor toggle swaps to Re menor, La con séptima, Sol menor", async () => {
+  it("clicking the Menor toggle swaps to La con séptima, Re menor, Sol menor", async () => {
     const { screen, userEvent } = await renderAcordes();
     const menorBtn = screen.querySelector(
       'button[data-circle="joropo-d-menor"]',
@@ -72,8 +72,8 @@ describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () 
 
     const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
-      "re-menor",
       "la-con-septima",
+      "re-menor",
       "sol-menor",
     ]);
   });
@@ -109,8 +109,8 @@ describe("/acordes — toggling Mayor/Menor switches the 3 rendered chords", () 
 
     const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
-      "re-mayor",
       "la-con-septima",
+      "re-mayor",
       "sol-mayor",
     ]);
   });
@@ -188,5 +188,27 @@ describe("/acordes — Spanish head meta", () => {
     // Spanish-specific accented/diacritic content, not a generic
     // English word — a light but concrete signal this is Spanish copy.
     expect(descriptionMetas[0]?.content).toMatch(/acorde|círculo|joropo/i);
+  });
+});
+
+describe("/acordes — Footer mount", () => {
+  it('renders <footer class="broadsheet-footer" role="contentinfo"> AFTER <main class="acordes">, not inside it', async () => {
+    const { screen } = await renderAcordes();
+    const main = screen.querySelector("main.acordes");
+    const footer = screen.querySelector("footer.broadsheet-footer");
+    expect(main).toBeTruthy();
+    expect(footer).toBeTruthy();
+    expect(footer!.getAttribute("role")).toBe("contentinfo");
+    expect(main!.contains(footer!)).toBe(false);
+    const position = main!.compareDocumentPosition(footer!);
+    expect(position & 4).toBeTruthy();
+  });
+
+  it("shows the footer credit text on /acordes", async () => {
+    const { screen } = await renderAcordes();
+    const text = screen.textContent ?? "";
+    expect(text).toContain(
+      "Creado por braejan desde los llanos de Casanare 🇨🇴 con 💛💙❤️ para estudiantes de la bandola llanera",
+    );
   });
 });

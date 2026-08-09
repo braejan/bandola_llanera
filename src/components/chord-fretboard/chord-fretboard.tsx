@@ -4,7 +4,7 @@ import {
   useContext,
   useSignal,
   useStylesScoped$,
-  useTask$,
+  useVisibleTask$,
   type QRL,
 } from "@builder.io/qwik";
 import {
@@ -143,26 +143,47 @@ export const ChordFretboard = component$<ChordFretboardProps>(
     const audioStatus = useContext(AudioStatusContext);
     const boardRef = useSignal<HTMLElement>();
 
-    // Subscribe once on mount. Matches ANY event whose targetId starts
-    // with this chord's own `chord-<id>-` prefix — covers BOTH the
-    // per-cell click shape (`chord-<id>-<string>-<fret>`) and
-    // playChord's index shape (`chord-<id>-<i>`), reconciling
-    // REQ-PLAY-003 with REQ-FRET-005 (design's "Flash matching"
-    // decision). Cleanup mirrors Diapason's `cleanup(off)` pattern —
-    // no listener leak across remounts.
-    useTask$(({ cleanup }) => {
-      const prefix = `chord-${chord.id}-`;
-      const off = subscribe((event: AnimEvent) => {
-        const root = boardRef.value;
-        if (!root) return;
-        if (!event.targetId.startsWith(prefix)) return;
-        const el = root.querySelector<HTMLElement>(
-          `.chord-fret--in-chord[data-midi="${event.midi}"]`,
-        );
-        if (el) flash(el);
-      });
-      cleanup(off);
-    });
+    // Subscribe as soon as the document is ready. MUST be
+    // useVisibleTask$, not useTask$: this task tracks no signal, so
+    // during SSR it runs once on the SERVER and Qwik has no reactive
+    // reason to resume/re-run it on the client — the subscription
+    // then lives only in the server's anim-target module instance,
+    // gone the moment that request ends, and the client never
+    // registers a listener at all (confirmed via a classList.add
+    // instrumentation trace: the flash callback body never executed
+    // in the browser under useTask$). `strategy: "document-ready"`
+    // (not the intersection-observer default) matters too: this
+    // board must be able to flash from a circle-wide sequence even
+    // before the visitor scrolls it into view — the default strategy
+    // left boards below the fold with no listener at all until
+    // scrolled to, so a "Tocar círculo completo" run reaching e.g.
+    // Sol mayor before the visitor ever scrolled there would silently
+    // never flash it.
+    //
+    // Matches ANY event whose targetId starts with this chord's own
+    // `chord-<id>-` prefix — covers BOTH the per-cell click shape
+    // (`chord-<id>-<string>-<fret>`) and playChord's index shape
+    // (`chord-<id>-<i>`), reconciling REQ-PLAY-003 with REQ-FRET-005
+    // (design's "Flash matching" decision). Cleanup mirrors
+    // Diapason's `cleanup(off)` pattern — no listener leak across
+    // remounts.
+    // eslint-disable-next-line qwik/no-use-visible-task
+    useVisibleTask$(
+      ({ cleanup }) => {
+        const prefix = `chord-${chord.id}-`;
+        const off = subscribe((event: AnimEvent) => {
+          const root = boardRef.value;
+          if (!root) return;
+          if (!event.targetId.startsWith(prefix)) return;
+          const el = root.querySelector<HTMLElement>(
+            `.chord-fret--in-chord[data-midi="${event.midi}"]`,
+          );
+          if (el) flash(el);
+        });
+        cleanup(off);
+      },
+      { strategy: "document-ready" },
+    );
 
     const isPlayable = (stringId: StringId, fret: number): boolean =>
       chord.voicing.some((v) => v.stringId === stringId && v.fret === fret);
