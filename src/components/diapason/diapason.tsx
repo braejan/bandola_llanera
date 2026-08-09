@@ -4,7 +4,7 @@ import {
   useContext,
   useStylesScoped$,
   useSignal,
-  useTask$,
+  useVisibleTask$,
   $,
 } from "@builder.io/qwik";
 import { playMidiNote } from "../../audio/play-midi-note";
@@ -213,22 +213,37 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
   // subscription listener, which only ever fires after render.
   const boardRef = useSignal<HTMLElement>();
 
-  // Subscribe to anim-target once on mount so external sequences
-  // (playTuningCheck, playScaleSequence) can flash the matching cell.
-  // useTask$ (not useVisibleTask$) runs on both server and client to
-  // keep state predictable across SSR resumption — see DESIGN.md
-  // "Qwik lifecycle wiring". `cleanup(off)` guarantees the listener is
-  // removed on unmount so remounts never accumulate subscribers
-  // (REQ-anim-target-3, risk callout R2).
-  useTask$(({ cleanup }) => {
-    const off = subscribe((event: AnimEvent) => {
-      const root = boardRef.value;
-      if (!root) return;
-      const el = locateAnimTargetCell(root, event);
-      if (el) flash(el, "playing");
-    });
-    cleanup(off);
-  });
+  // Subscribe to anim-target as soon as the document is ready, so
+  // external sequences (playTuningCheck, playScaleSequence) can flash
+  // the matching cell. MUST be useVisibleTask$ with
+  // `strategy: "document-ready"`, not useTask$: this task tracks no
+  // signal, so during SSR it runs once on the SERVER and Qwik has no
+  // reactive reason to resume/re-run it on the client — the
+  // subscription then lives only in the server's anim-target module
+  // instance, gone the moment that request ends, and the client never
+  // registers a listener at all (confirmed live: the flash callback
+  // body never executed in the browser under useTask$, on both dev
+  // and production builds). The old doc comment here claiming
+  // "useTask$ ... runs on both server and client" was wrong — that
+  // is exactly the failure mode `document-ready` fixes, and the
+  // default intersection-observer strategy would still leave a
+  // below-the-fold instance unsubscribed until scrolled into view.
+  // `cleanup(off)` guarantees the listener is removed on unmount so
+  // remounts never accumulate subscribers (REQ-anim-target-3, risk
+  // callout R2).
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(
+    ({ cleanup }) => {
+      const off = subscribe((event: AnimEvent) => {
+        const root = boardRef.value;
+        if (!root) return;
+        const el = locateAnimTargetCell(root, event);
+        if (el) flash(el, "playing");
+      });
+      cleanup(off);
+    },
+    { strategy: "document-ready" },
+  );
 
   /**
    * Play the note for the clicked fret/open cell. The `data-midi`,
