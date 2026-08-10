@@ -49,7 +49,7 @@ export { AUDIO_UNAVAILABLE_MESSAGE };
  * Lifecycle contract: this component assumes the PARENT keys each
  * instance by `chord.id` (e.g. `<ChordFretboard chord={c} key={c.id} />`).
  * `chord.id` never changes within one mounted instance's lifetime —
- * toggling Mayor/Menor on `/acordes` remounts a fresh instance with a
+ * toggling Mayor/Menor on `/joropo` remounts a fresh instance with a
  * fresh subscription instead of mutating this one in place. This is
  * the reason `useTask$` below can safely close over `chord.id` without
  * the `useComputed$` staleness guard Diapason needs (Diapason is never

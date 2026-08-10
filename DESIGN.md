@@ -94,7 +94,7 @@ The palette is saturated folk-modern, not muted editorial: a deep terracotta gro
 - The scale switcher is typography, not a control. Three wood-type words, the active one in the dominant ground.
 - The audio is a labeled placeholder. No fabricated recordings until real audio exists.
 - Spanish throughout. No English copy on any surface.
-- The student menu is the printed header of the broadsheet — a flat Rye/IBM Plex strip listing Inicio / Acordes / Camino. It is the student's stable way back; it does not become a chrome layer that competes with the poster.
+- The student menu is the printed header of the broadsheet — a flat Rye/IBM Plex strip listing Inicio / Joropo / Camino. It is the student's stable way back; it does not become a chrome layer that competes with the poster.
 
 ## Colors
 
@@ -268,11 +268,11 @@ Reduced-motion: the existing global `@media (prefers-reduced-motion: reduce)` ru
 ### StudentMenu (persistent header strip)
 - **Shape:** paper background, 2px solid ink border-bottom only, square corners, no shadow, no gradient — the same printed-band grammar as the Footer, but printed over the TOP of the poster instead of under it.
 - **Typography:** Rye (display), `letter-spacing: 0.02em`, matching the CTA's wood-type voice.
-- **Content:** exactly three items, fixed order — `Inicio` (`/`), `Acordes` (`/acordes`), `Camino` (`/camino`) — each a Qwik City `<Link>`.
+- **Content:** exactly three items, fixed order — `Inicio` (`/`), `Joropo` (`/joropo`), `Camino` (`/camino`) — each a Qwik City `<Link>`.
 - **Active state:** the item whose route matches the current pathname gets `aria-current="page"` and the active visual treatment (ground-color border-bottom accent); non-active items carry no `aria-current` attribute at all.
 - **Layout:** single row at every viewport; wraps onto a second line at `≤640px` instead of collapsing into a hamburger or drawer — the strip is never hidden.
 - **Placement:** rendered in `src/routes/layout.tsx` BEFORE `<Slot />`, so it is a DOM sibling of every route's `<main>`, never a descendant — it is the header of the broadsheet, not a second viewport of the poster.
-- **Rationale:** the existing "no nav bar, footer, or second viewport" rule is amended a second time (after the Footer) to permit this persistent strip. It gives the student a stable way back to Inicio/Acordes/Camino without becoming a chrome layer that competes with the poster.
+- **Rationale:** the existing "no nav bar, footer, or second viewport" rule is amended a second time (after the Footer) to permit this persistent strip. It gives the student a stable way back to Inicio/Joropo/Camino without becoming a chrome layer that competes with the poster.
 
 ### Tuning-Check button
 - **Shape:** paper background, 1px ink border, square corners, no shadow. Same CTA-paper grammar scaled to the label.

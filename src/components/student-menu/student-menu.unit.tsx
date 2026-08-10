@@ -4,9 +4,9 @@
  * Asserts on the StudentMenu component:
  *   - a <nav aria-label="Menú del estudiante"> with 3 <a> in order
  *     (REQ-MENU-001/002)
- *   - hrefs are "/", "/acordes", "/camino" (REQ-MENU-003)
+ *   - hrefs are "/", "/joropo", "/camino" (REQ-MENU-003)
  *   - aria-current="page" on the matching item, absent elsewhere,
- *     including the nested /acordes/* case (REQ-MENU-004/005)
+ *     including the nested /joropo/* case (REQ-MENU-004/005)
  *   - the active item carries the active class, others don't
  *     (REQ-MENU-006)
  *   - exact Spanish labels (REQ-MENU-007)
@@ -47,7 +47,7 @@ describe("StudentMenu — persistent nav (REQ-MENU-001)", () => {
 });
 
 describe("StudentMenu — item order and hrefs (REQ-MENU-002/003)", () => {
-  it("renders exactly 3 items, in order Inicio, Acordes, Camino", async () => {
+  it("renders exactly 3 items, in order Inicio, Joropo, Camino", async () => {
     const screen = await renderAt("/");
     const links = Array.from(
       screen.querySelectorAll('nav[aria-label="Menú del estudiante"] a'),
@@ -55,19 +55,19 @@ describe("StudentMenu — item order and hrefs (REQ-MENU-002/003)", () => {
     expect(links.length).toBe(3);
     expect(links.map((a) => a.textContent?.trim())).toEqual([
       "Inicio",
-      "Acordes",
+      "Joropo",
       "Camino",
     ]);
   });
 
-  it('hrefs are exactly "/", "/acordes", "/camino" in that order', async () => {
+  it('hrefs are exactly "/", "/joropo", "/camino" in that order', async () => {
     const screen = await renderAt("/");
     const links = Array.from(
       screen.querySelectorAll('nav[aria-label="Menú del estudiante"] a'),
     );
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
       "/",
-      "/acordes",
+      "/joropo",
       "/camino",
     ]);
   });
@@ -84,8 +84,8 @@ describe("StudentMenu — aria-current on the active item (REQ-MENU-004/005)", (
     expect(links[2].getAttribute("aria-current")).toBeNull();
   });
 
-  it("Acordes is active on /acordes", async () => {
-    const screen = await renderAt("/acordes");
+  it("Joropo is active on /joropo", async () => {
+    const screen = await renderAt("/joropo");
     const links = Array.from(
       screen.querySelectorAll('nav[aria-label="Menú del estudiante"] a'),
     );
@@ -94,8 +94,8 @@ describe("StudentMenu — aria-current on the active item (REQ-MENU-004/005)", (
     expect(links[2].getAttribute("aria-current")).toBeNull();
   });
 
-  it("Acordes stays active on a nested /acordes/* path", async () => {
-    const screen = await renderAt("/acordes/alguna-sub-ruta");
+  it("Joropo stays active on a nested /joropo/* path", async () => {
+    const screen = await renderAt("/joropo/alguna-sub-ruta");
     const links = Array.from(
       screen.querySelectorAll('nav[aria-label="Menú del estudiante"] a'),
     );
@@ -124,8 +124,8 @@ describe("StudentMenu — aria-current on the active item (REQ-MENU-004/005)", (
 });
 
 describe("StudentMenu — active visual class (REQ-MENU-006)", () => {
-  it("only the Acordes item carries the active class on /acordes", async () => {
-    const screen = await renderAt("/acordes");
+  it("only the Joropo item carries the active class on /joropo", async () => {
+    const screen = await renderAt("/joropo");
     const links = Array.from(
       screen.querySelectorAll('nav[aria-label="Menú del estudiante"] a'),
     );
@@ -142,14 +142,14 @@ describe("StudentMenu — active visual class (REQ-MENU-006)", () => {
 });
 
 describe("StudentMenu — exact Spanish labels (REQ-MENU-007)", () => {
-  it('labels are exactly "Inicio", "Acordes", "Camino"', async () => {
+  it('labels are exactly "Inicio", "Joropo", "Camino"', async () => {
     const screen = await renderAt("/");
     const links = Array.from(
       screen.querySelectorAll('nav[aria-label="Menú del estudiante"] a'),
     );
     expect(links.map((a) => a.textContent)).toEqual([
       "Inicio",
-      "Acordes",
+      "Joropo",
       "Camino",
     ]);
   });

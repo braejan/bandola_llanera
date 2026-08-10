@@ -2,7 +2,7 @@
  * Strict TDD — ChordCarousel component tests.
  *
  * Fully controlled: this harness owns `activeIndex` itself (mirroring
- * how the /acordes route will own it) and updates it from
+ * how the /joropo route will own it) and updates it from
  * `onNavigate$`, so assertions can check BOTH what the component
  * requested (the navigate log) and what the DOM shows once the parent
  * applies that request (transform, inert, aria-selected).
