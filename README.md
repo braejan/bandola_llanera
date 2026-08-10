@@ -15,7 +15,7 @@ Este proyecto nació de mi propio aprendizaje: soy estudiante de bandola llanera
 - **Diapasón interactivo** — visualiza las cuatro cuerdas y su afinación (A3–D4–A4–E5).
 - **Selector de escalas** — alterna entre mayor, menor, armónica y cromática sobre cualquier tónica.
 - **Verificación de afinación y reproducción de escalas** — sonido sintetizado (síntesis Karplus-Strong) para escuchar cada nota o escala.
-- **Sección de acordes** (`/acordes`) — círculo armónico de acordes con carrusel y diagramas de digitación en el diapasón.
+- **Joropo** (`/joropo`) — círculo armónico del joropo (dominante, tónica y subdominante) con carrusel y diagramas de digitación en el diapasón.
 - **Camino del estudiante** (`/camino`) — ruta guiada de aprendizaje: afinación → escalas → acordes.
 - Contenido íntegramente en español, sin cuentas ni inicio de sesión, pensado para practicar desde el celular, la tablet o el computador.
 
@@ -79,7 +79,7 @@ src/
 ├── components/    # componentes de UI (diapasón, acordes, escalas, footer, menú)
 ├── hooks/         # hooks reutilizables
 ├── music/         # datos musicales: afinación, escalas, acordes
-└── routes/        # páginas Qwik City (/, /acordes, /camino)
+└── routes/        # páginas Qwik City (/, /joropo, /camino)
 ```
 
 ## Contribuir

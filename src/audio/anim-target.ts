@@ -25,6 +25,17 @@ export interface AnimEvent {
   midi: number;
   /** Stable identifier for the visual target (e.g. `"tuning-A3"`). */
   targetId: string;
+  /**
+   * Explicit fretboard position (currently published only by
+   * `playScaleSequence`). When present, a resolver should use this
+   * directly rather than matching by `midi` — several strings can
+   * share the same MIDI (e.g. A3 fret 5 = D4 open), and picking among
+   * them by MIDI alone can't express "which string the sequence
+   * actually intends," which is what caused the animation to bounce
+   * between strings instead of walking forward across the neck.
+   */
+  stringId?: string;
+  fret?: number;
 }
 
 export type AnimListener = (event: AnimEvent) => void;

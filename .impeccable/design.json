@@ -254,8 +254,8 @@
       "name": "Student Menu",
       "kind": "custom",
       "refersTo": "student-menu",
-      "description": "Persistent header strip above the poster — a second documented exception to the original no-nav rule (see DESIGN.md § StudentMenu (persistent header strip)). Paper background, 2px solid ink border-bottom only, square corners, no shadow. Three Rye-voice items (Inicio, Acordes, Camino) as Qwik City Links, letter-spacing 0.02em; the active route gets aria-current=\"page\" and the active visual treatment. Rendered in layout.tsx before <Slot />, so it is a DOM sibling of <main>, never a descendant — it does not count as a second viewport.",
-      "html": "<nav class=\"student-menu\" aria-label=\"Menú del estudiante\"><a href=\"/\" aria-current=\"page\">Inicio</a><a href=\"/acordes\">Acordes</a><a href=\"/camino\">Camino</a></nav>",
+      "description": "Persistent header strip above the poster — a second documented exception to the original no-nav rule (see DESIGN.md § StudentMenu (persistent header strip)). Paper background, 2px solid ink border-bottom only, square corners, no shadow. Three Rye-voice items (Inicio, Joropo, Camino) as Qwik City Links, letter-spacing 0.02em; the active route gets aria-current=\"page\" and the active visual treatment. Rendered in layout.tsx before <Slot />, so it is a DOM sibling of <main>, never a descendant — it does not count as a second viewport.",
+      "html": "<nav class=\"student-menu\" aria-label=\"Menú del estudiante\"><a href=\"/\" aria-current=\"page\">Inicio</a><a href=\"/joropo\">Joropo</a><a href=\"/camino\">Camino</a></nav>",
       "css": ".student-menu { background: #f5ebd8; border-bottom: 2px solid #1a1410; border-radius: 0; box-shadow: none; display: flex; gap: 1rem; padding: 0.5rem 1rem; font-family: Rye, Alfa Slab One, Georgia, serif; letter-spacing: 0.02em; } .student-menu a[aria-current=\"page\"] { border-bottom: 2px solid #1a1410; }"
     },
     {
@@ -303,7 +303,7 @@
       "Open strings are the preferred fingering when they produce a scale tone. A small \"abierta\" marker labels the open string; a \"(=abierta)\" alternative label appears on any fretted cell whose exact MIDI pitch matches an in-scale open string. The student learns the open-string fingering first.",
       "The audio is synthesized, not recorded. A native Web Audio additive pluck graph plays the correct pitch for every fret and open string; the synthesis is explicitly labeled \"sonido sintetizado (simulación)\" so no listener is misled into believing a real bandola was sampled.",
       "Spanish throughout. No English copy on any surface.",
-      "The student menu is the printed header of the broadsheet — a flat Rye/IBM Plex strip listing Inicio / Acordes / Camino. It is the student's stable way back; it does not become a chrome layer that competes with the poster."
+      "The student menu is the printed header of the broadsheet — a flat Rye/IBM Plex strip listing Inicio / Joropo / Camino. It is the student's stable way back; it does not become a chrome layer that competes with the poster."
     ],
     "rules": [
       { "name": "The Four Poster Colors + Functional Digitation", "body": "The four poster colors (terracotta, marigold, ink, paper) carry the surface. Digitation red is a functional fifth color, used only for the digitation markers (scale circles on the strings, fingering numerals, open-string alternative labels) inside the diapason. It never decorates a surface, never replaces a poster color, and never appears outside the diapason's scale/fingering context.", "section": "colors" },

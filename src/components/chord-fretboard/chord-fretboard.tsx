@@ -49,7 +49,7 @@ export { AUDIO_UNAVAILABLE_MESSAGE };
  * Lifecycle contract: this component assumes the PARENT keys each
  * instance by `chord.id` (e.g. `<ChordFretboard chord={c} key={c.id} />`).
  * `chord.id` never changes within one mounted instance's lifetime —
- * toggling Mayor/Menor on `/acordes` remounts a fresh instance with a
+ * toggling Mayor/Menor on `/joropo` remounts a fresh instance with a
  * fresh subscription instead of mutating this one in place. This is
  * the reason `useTask$` below can safely close over `chord.id` without
  * the `useComputed$` staleness guard Diapason needs (Diapason is never
@@ -513,6 +513,20 @@ const STYLES = `
 
   .chord-fret--in-chord .chord-fret-note {
     color: var(--color-ink);
+  }
+
+  /* Open string (fret 0) IN the chord — a distinct cool blue instead
+     of the marigold accent, so "played open, not fretted" reads as a
+     different signal from "digited at this fret", not just a
+     coincidental position. Text switches to paper (light-on-dark),
+     the same pairing Diapason's own digitation-red circle uses,
+     since this blue is dark enough that ink text loses contrast. */
+  .chord-fret--open.chord-fret--in-chord::before {
+    background: var(--color-open-string);
+  }
+
+  .chord-fret--open.chord-fret--in-chord .chord-fret-note {
+    color: var(--color-paper);
   }
 
   .chord-fret--playing {

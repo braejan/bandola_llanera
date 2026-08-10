@@ -181,64 +181,102 @@ function at(stringId: StringId, note: string): ChordVoicingEntry {
 }
 
 /**
- * Manually verified voicings that override the generated formula,
- * keyed by chord id. Confirmed against the physical instrument one
- * chord at a time — see the KNOWN LIMITATION note above: the formula's
- * single fixed role-per-string shape doesn't generalize across every
- * tono, so verified chords are locked here as they're tested.
+ * Manually verified voicings that override the generated formula.
+ * Confirmed against the physical instrument one chord at a time — see
+ * the KNOWN LIMITATION note above: the formula's single fixed
+ * role-per-string shape doesn't generalize across every tono, so
+ * verified chords are locked here as they're tested.
+ *
+ * Two independent key shapes share this one map:
+ *  - Dominant7 chords are keyed by the full chord id
+ *    (`${key}-con-septima`) — each tono has exactly one dominant7, no
+ *    role ambiguity.
+ *  - Triads (mayor/menor) are keyed by `${key}-${quality}` ONLY, with
+ *    NO role suffix. A confirmed triad has exactly one physical shape
+ *    on this instrument, independent of which harmonic function
+ *    borrows it — e.g. La mayor is fretted identically whether it's
+ *    the I of the La circle or the IV of the Mi circle. `buildTriad`
+ *    looks this same key up for both the tonic and subdominant builds,
+ *    so there is never a second, independently-typed copy of a
+ *    chord's fret numbers to drift out of sync.
  */
 const VOICING_OVERRIDES: Partial<Record<string, readonly ChordVoicingEntry[]>> =
   {
-    // Do circle — dominant7 (G7).
+    // Dominant7 — one voicing per tono.
     "sol-con-septima": [at("A3", "B"), at("D4", "F"), at("A4", "D"), at("E5", "G")],
-    // Do circle — tonic.
-    "do-mayor": [at("A3", "C"), at("D4", "E"), at("A4", "C"), at("E5", "G")],
-    "do-menor": [at("A3", "C"), at("D4", "D#"), at("A4", "C"), at("E5", "G")],
-    // Do circle — subdominant (Fa as IV of Do).
-    "fa-mayor-cuarta": [at("A3", "C"), at("D4", "F"), at("A4", "A"), at("E5", "F")],
-    "fa-menor-cuarta": [at("A3", "C"), at("D4", "F"), at("A4", "C"), at("E5", "G#")],
-    // Sol circle — subdominant (Do as IV of Sol) reuses the confirmed
-    // do-mayor/do-menor shape: same chord, same physical fingering.
-    "do-mayor-cuarta": [at("A3", "C"), at("D4", "E"), at("A4", "C"), at("E5", "G")],
-    "do-menor-cuarta": [at("A3", "C"), at("D4", "D#"), at("A4", "C"), at("E5", "G")],
-    // Fa circle — tonic (Fa's own I) reuses the confirmed
-    // fa-mayor-cuarta shape. fa-menor's formula output already matches
-    // fa-menor-cuarta by coincidence, so it needs no override.
-    "fa-mayor": [at("A3", "C"), at("D4", "F"), at("A4", "A"), at("E5", "F")],
-    // Do# circle — dominant7 (G#7).
     "sol#-con-septima": [at("A3", "C"), at("D4", "F#"), at("A4", "D#"), at("E5", "G#")],
-    // Do# circle — tonic.
-    "do#-mayor": [at("A3", "C#"), at("D4", "F"), at("A4", "C#"), at("E5", "G#")],
-    "do#-menor": [at("A3", "C#"), at("D4", "E"), at("A4", "C#"), at("E5", "G#")],
-    // Do# circle — subdominant (F# as IV of Do#).
-    "fa#-mayor-cuarta": [at("A3", "C#"), at("D4", "F#"), at("A4", "A#"), at("E5", "F#")],
-    "fa#-menor-cuarta": [at("A3", "C#"), at("D4", "F#"), at("A4", "A"), at("E5", "F#")],
-    // Reference chart cross-checks (Alejo Cordero, "Acordes para Bandola
-    // Llanera") — do-mayor/do-menor already matched exactly and needed
-    // no change; do-con-septima (C7, dominant of Fa) is new.
     "do-con-septima": [at("A3", "C"), at("D4", "E"), at("A4", "A#"), at("E5", "G")],
     "do#-con-septima": [at("A3", "C#"), at("D4", "F"), at("A4", "B"), at("E5", "G#")],
+    // D's own dominant7 — a different string-role pattern than the
+    // locked dominant7Voicing formula (which fits La con séptima):
+    // here A3 carries the 5th, D4 the open root, A4 the ♭7th, and E5
+    // the 3rd, giving an open-position 0/0/3/2 shape instead of the
+    // formula's unplayable 5/7/9/8 spread.
+    "re-con-septima": [at("A3", "A"), at("D4", "D"), at("A4", "C"), at("E5", "F#")],
     "re#-con-septima": [at("A3", "A#"), at("D4", "D#"), at("A4", "C#"), at("E5", "G")],
     "mi-con-septima": [at("A3", "B"), at("D4", "E"), at("A4", "D"), at("E5", "G#")],
-    "fa-con-septima": [at("A3", "C"), at("D4", "D#"), at("A4", "A"), at("E5", "F")],
-    // F#'s own tonic reuses the confirmed fa#-mayor-cuarta/fa#-menor-cuarta shape.
+    "fa-con-septima": [at("A3", "A"), at("D4", "D#"), at("A4", "C"), at("E5", "F")],
+    "si-con-septima": [at("A3", "B"), at("D4", "D#"), at("A4", "A"), at("E5", "F#")],
+    // F#'s own dominant7 — the raw dominant7Voicing formula lands on an
+    // unplayable fret9/11/1/0 spread; this is the confirmed shape.
+    "fa#-con-septima": [at("A3", "C#"), at("D4", "F#"), at("A4", "A#"), at("E5", "E")],
+
+    // Triads — one physical shape per key+quality, shared by the tonic
+    // and subdominant roles wherever that chord appears.
+    //
+    // D's own tonic (and Dm) — this is exactly what tonicVoicing()
+    // already produces (D was one of the 5 originally-confirmed
+    // chords the formula itself was reverse-engineered from), locked
+    // here explicitly so the subdominant role (D as IV of La) shares
+    // it instead of independently falling back to subdominantVoicing(),
+    // which computes an unplayable fret9/7/9/10 spread.
+    "re-mayor": [at("A3", "A"), at("D4", "D"), at("A4", "A"), at("E5", "F#")],
+    "re-menor": [at("A3", "A"), at("D4", "D"), at("A4", "A"), at("E5", "F")],
+    "do-mayor": [at("A3", "C"), at("D4", "E"), at("A4", "C"), at("E5", "G")],
+    "do-menor": [at("A3", "C"), at("D4", "D#"), at("A4", "C"), at("E5", "G")],
+    "fa-mayor": [at("A3", "C"), at("D4", "F"), at("A4", "A"), at("E5", "F")],
+    "fa-menor": [at("A3", "C"), at("D4", "F"), at("A4", "C"), at("E5", "G#")],
+    "do#-mayor": [at("A3", "C#"), at("D4", "F"), at("A4", "C#"), at("E5", "G#")],
+    "do#-menor": [at("A3", "C#"), at("D4", "E"), at("A4", "C#"), at("E5", "G#")],
     "fa#-mayor": [at("A3", "C#"), at("D4", "F#"), at("A4", "A#"), at("E5", "F#")],
     "fa#-menor": [at("A3", "C#"), at("D4", "F#"), at("A4", "A"), at("E5", "F#")],
     // G's own tonic — the raw tonic formula gives an unplayable fret5/7
-    // spread; the real shape matches sol-mayor-cuarta/sol-menor-cuarta
-    // (the subdominant-of-Re shape) exactly, even though it's generated
-    // by a different formula, so it needs its own override here too.
+    // spread; the real shape is this one, matching what the raw
+    // subdominant formula already produced for Sol-as-IV-of-Re.
     "sol-mayor": [at("A3", "B"), at("D4", "D"), at("A4", "B"), at("E5", "G")],
     "sol-menor": [at("A3", "A#"), at("D4", "D"), at("A4", "A#"), at("E5", "G")],
-    // G#'s own tonic.
     "sol#-mayor": [at("A3", "C"), at("D4", "D#"), at("A4", "C"), at("E5", "G#")],
     "sol#-menor": [at("A3", "B"), at("D4", "D#"), at("A4", "B"), at("E5", "G#")],
-    // A#'s own tonic.
+    // A's own tonic — A3 is tuned to A, so the root rings open here
+    // instead of the raw tonic formula's fret7/7/7/9 barre.
+    "la-mayor": [at("A3", "A"), at("D4", "E"), at("A4", "C#"), at("E5", "A")],
+    // Same reasoning as la-mayor: A3 rings the open root instead of
+    // the raw formula's fretted 3rd.
+    "la-menor": [at("A3", "A"), at("D4", "E"), at("A4", "C"), at("E5", "A")],
     "la#-mayor": [at("A3", "A#"), at("D4", "D"), at("A4", "A#"), at("E5", "F")],
-    // B's own tonic and dominant7.
+    // A#'s own minor tonic — A3 rings the open-position root at fret 1
+    // and E5 the 5th at fret 1, same as la#-mayor; D4/A4 already
+    // matched the raw subdominant formula's Fa/Do# and needed no change.
+    "la#-menor": [at("A3", "A#"), at("D4", "F"), at("A4", "C#"), at("E5", "F")],
+    // D#'s own tonic — this is what the raw tonic formula already
+    // produces by coincidence; locked here explicitly so it no longer
+    // depends on that coincidence once shared with the subdominant role.
+    "re#-mayor": [at("A3", "A#"), at("D4", "D#"), at("A4", "A#"), at("E5", "G")],
+    // D#m — same reasoning: the tonic formula already lands on the
+    // right shape, locked here so the subdominant role (D#m as IV of
+    // La# menor) shares it instead of the raw formula's fret9/8/9/11.
+    "re#-menor": [at("A3", "A#"), at("D4", "D#"), at("A4", "A#"), at("E5", "F#")],
     "si-mayor": [at("A3", "B"), at("D4", "D#"), at("A4", "B"), at("E5", "F#")],
     "si-menor": [at("A3", "B"), at("D4", "D"), at("A4", "B"), at("E5", "F#")],
-    "si-con-septima": [at("A3", "B"), at("D4", "D#"), at("A4", "A"), at("E5", "F#")],
+    // E's own tonic — this is what the raw tonic formula already
+    // produces (same doubled-5th shape as D/D#); locked here explicitly
+    // so the subdominant role (E as IV of Si) shares it instead of the
+    // raw formula's unplayable fret11/9/11/0 spread.
+    "mi-mayor": [at("A3", "B"), at("D4", "E"), at("A4", "B"), at("E5", "G#")],
+    // Em — same reasoning as mi-mayor: locked here so the subdominant
+    // role (Em as IV of Si menor) shares it instead of the raw
+    // formula's unplayable fret10/9/10/0 spread.
+    "mi-menor": [at("A3", "B"), at("D4", "E"), at("A4", "B"), at("E5", "G")],
   };
 
 /** One dominant7 chord per tono — shared across a key's mayor/menor circles. */
@@ -267,11 +305,15 @@ function buildTriad(
   const pc = KEY_DATA[key].pc;
   const thirdInterval = quality === "mayor" ? MAJOR_THIRD : MINOR_THIRD;
   const id = `${key}-${quality}${idSuffix}`;
+  // Overrides are keyed by key+quality only (no role suffix) — a
+  // confirmed triad has one physical shape, shared by every role it
+  // plays across circles. Only an UNconfirmed triad falls back to the
+  // role-specific formula, which can legitimately differ per role.
   const computedVoicing =
     role === "tonic"
       ? tonicVoicing(pc, thirdInterval)
       : subdominantVoicing(pc, thirdInterval);
-  const voicing = VOICING_OVERRIDES[id] ?? computedVoicing;
+  const voicing = VOICING_OVERRIDES[`${key}-${quality}`] ?? computedVoicing;
   return {
     id,
     // Letter-shorthand chord symbol (e.g. "D", "Dm"), matching the
@@ -292,9 +334,11 @@ export const TONIC_CHORDS: readonly Chord[] = ALL_KEYS_LIST.flatMap((key) =>
 
 /**
  * Every key's chord, voiced with the subdominant-shape role assignment
- * (id suffixed `-cuarta` — the SAME root+quality as a `TONIC_CHORDS`
- * entry can need a DIFFERENT voicing depending on which role it plays,
- * e.g. Sol mayor as IV-of-Re vs Sol mayor as I-of-Sol).
+ * (id suffixed `-cuarta`). Once a key+quality has a confirmed
+ * `VOICING_OVERRIDES` entry, this and `TONIC_CHORDS` render the
+ * identical shape — only an unconfirmed triad falls back to its own
+ * role-specific formula, which can differ from the tonic formula's
+ * result until it's locked too.
  */
 export const SUBDOMINANT_CHORDS: readonly Chord[] = ALL_KEYS_LIST.flatMap(
   (key) => QUALITIES.map((quality) => buildTriad(key, quality, "subdominant", "-cuarta")),

@@ -6,7 +6,7 @@ import { Link, useLocation } from "@builder.io/qwik-city";
  *
  * A documented exception to DESIGN.md's original "no nav, no footer,
  * no second viewport" rule (REQ-MENU-001, amended a second time after
- * Footer): a single row of three items — Inicio / Acordes / Camino —
+ * Footer): a single row of three items — Inicio / Joropo / Camino —
  * printed above the poster in the SAME paper-on-ink grammar as the
  * Footer, so it reads as another band of the same broadsheet, not as
  * chrome.
@@ -30,9 +30,9 @@ export const STUDENT_MENU_ITEMS: readonly StudentMenuItem[] = [
     isActive: (pathname) => pathname === "/",
   },
   {
-    href: "/acordes",
-    label: "Acordes",
-    isActive: (pathname) => pathname.startsWith("/acordes"),
+    href: "/joropo",
+    label: "Joropo",
+    isActive: (pathname) => pathname.startsWith("/joropo"),
   },
   {
     href: "/camino",

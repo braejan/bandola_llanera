@@ -408,60 +408,98 @@ describe("Diapason — anim-target subscription (T-5, risk callout R2)", () => {
     animTarget.__resetAnimTargetForTests();
   });
 
-  it("subscribes to anim-target on mount and flashes the matching open-string cell for a tuning-* event", async () => {
+  it("subscribes to anim-target on mount and flashes the matching REGULAR fret-0 cell (not the headstock) for a tuning-* event", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness scaleId="re-mayor" />);
 
     animTarget.publish({ midi: 57, targetId: "tuning-A3" });
 
-    const openA3 = screen.querySelector(
+    const regularA3Fret0 = screen.querySelector(
+      'button[data-string="A3"][data-fret="0"]:not(.diapason-headstock-cell)',
+    );
+    expect(regularA3Fret0).not.toBeNull();
+    expect(regularA3Fret0!.classList.contains("fret--playing")).toBe(true);
+
+    const headstockA3 = screen.querySelector(
       '.diapason-headstock-cell[data-string="A3"][data-fret="0"]',
     );
-    expect(openA3).not.toBeNull();
-    expect(openA3!.classList.contains("fret--playing")).toBe(true);
+    expect(headstockA3!.classList.contains("fret--playing")).toBe(false);
   });
 
-  it("flashes the matching cell by MIDI for a scale-* event, preferring the open-string cell", async () => {
+  it("flashes the exact cell an explicit stringId/fret names, ignoring MIDI ties entirely (the actual path playScaleSequence uses)", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness scaleId="re-mayor" />);
 
-    // MIDI 62 = D4 open AND A3 fret 5 AND D4's own regular fret-0 cell.
-    // The subscription must prefer the true open-string (headstock) cell.
-    animTarget.publish({ midi: 62, targetId: "scale-re-mayor-2" });
-
-    const openD4 = screen.querySelector(
-      '.diapason-headstock-cell[data-string="D4"][data-fret="0"]',
-    ) as HTMLElement;
-    expect(openD4).not.toBeNull();
-    expect(openD4.classList.contains("fret--playing")).toBe(true);
+    // MIDI 62 = D4 open AND A3 fret 5 AND D4's own regular fret-0 cell
+    // — three cells share this MIDI. An explicit stringId/fret must
+    // win over all of them, even though A3 fret 5 is NOT the cell a
+    // MIDI-only match would prefer.
+    animTarget.publish({
+      midi: 62,
+      targetId: "scale-re-mayor-A3-5",
+      stringId: "A3",
+      fret: 5,
+    });
 
     const a3Fret5 = screen.querySelector(
       'button[data-string="A3"][data-fret="5"]',
     ) as HTMLElement;
-    expect(a3Fret5.classList.contains("fret--playing")).toBe(false);
+    expect(a3Fret5.classList.contains("fret--playing")).toBe(true);
+
+    const d4RegularFret0 = screen.querySelector(
+      'button[data-string="D4"][data-fret="0"]:not(.diapason-headstock-cell)',
+    ) as HTMLElement;
+    expect(d4RegularFret0.classList.contains("fret--playing")).toBe(false);
+
+    const headstockD4 = screen.querySelector(
+      '.diapason-headstock-cell[data-string="D4"][data-fret="0"]',
+    ) as HTMLElement;
+    expect(headstockD4.classList.contains("fret--playing")).toBe(false);
+  });
+
+  it("falls back to matching by MIDI (preferring the REGULAR fret-0 cell over the headstock) for a scale-* event with no explicit stringId/fret", async () => {
+    const { screen, render } = await createDOM();
+    await render(<TestHarness scaleId="re-mayor" />);
+
+    // MIDI 62 = D4 open AND A3 fret 5 AND D4's own regular fret-0 cell.
+    // With no stringId/fret given, the fallback must prefer D4's
+    // regular fret-0 cell — the one carrying the open-string blue
+    // circle — over its headstock sibling (plain text, no circle) and
+    // over A3 fret 5 (a different string entirely).
+    animTarget.publish({ midi: 62, targetId: "scale-re-mayor-2" });
 
     const d4RegularFret0 = screen.querySelector(
       'button[data-string="D4"][data-fret="0"]:not(.diapason-headstock-cell)',
     ) as HTMLElement;
     expect(d4RegularFret0).not.toBeNull();
-    expect(d4RegularFret0.classList.contains("fret--playing")).toBe(false);
+    expect(d4RegularFret0.classList.contains("fret--playing")).toBe(true);
+
+    const headstockD4 = screen.querySelector(
+      '.diapason-headstock-cell[data-string="D4"][data-fret="0"]',
+    ) as HTMLElement;
+    expect(headstockD4.classList.contains("fret--playing")).toBe(false);
+
+    const a3Fret5 = screen.querySelector(
+      'button[data-string="A3"][data-fret="5"]',
+    ) as HTMLElement;
+    expect(a3Fret5.classList.contains("fret--playing")).toBe(false);
   });
 
   it("does not flash when prefers-reduced-motion is set (matchMedia mocked on the render window)", async () => {
     const { screen, render } = await createDOM();
     await render(<TestHarness scaleId="re-mayor" />);
 
-    const openA3 = screen.querySelector(
-      '.diapason-headstock-cell[data-string="A3"][data-fret="0"]',
+    const regularA3Fret0 = screen.querySelector(
+      'button[data-string="A3"][data-fret="0"]:not(.diapason-headstock-cell)',
     ) as HTMLElement;
-    const view = openA3.ownerDocument.defaultView as unknown as {
+    const view = regularA3Fret0.ownerDocument.defaultView as unknown as {
       matchMedia: (query: string) => { matches: boolean };
     };
     view.matchMedia = () => ({ matches: true });
 
     animTarget.publish({ midi: 57, targetId: "tuning-A3" });
 
-    expect(openA3.classList.contains("fret--playing")).toBe(false);
+    expect(regularA3Fret0.classList.contains("fret--playing")).toBe(false);
   });
 
   it("unsubscribes when the captured cleanup fn runs — no listener leak across remounts (R2)", async () => {
@@ -473,15 +511,15 @@ describe("Diapason — anim-target subscription (T-5, risk callout R2)", () => {
     const off = subscribeSpy.mock.results[0]?.value as (() => void) | undefined;
     expect(typeof off).toBe("function");
 
-    const openA3 = screen.querySelector(
-      '.diapason-headstock-cell[data-string="A3"][data-fret="0"]',
+    const regularA3Fret0 = screen.querySelector(
+      'button[data-string="A3"][data-fret="0"]:not(.diapason-headstock-cell)',
     ) as HTMLElement;
 
     // Simulate Qwik's cleanup(off) firing on component teardown.
     off!();
 
     animTarget.publish({ midi: 57, targetId: "tuning-A3" });
-    expect(openA3.classList.contains("fret--playing")).toBe(false);
+    expect(regularA3Fret0.classList.contains("fret--playing")).toBe(false);
   });
 });
 

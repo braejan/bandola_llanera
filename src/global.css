@@ -14,6 +14,7 @@
   --color-ink-tint: #4a3d34;      /* Ink, dimmed for secondary text on terracotta */
   --color-ink-on-paper: #2b211a;  /* Ink, slightly lifted from --color-ink on paper */
   --color-digitation: #c0392b;    /* Functional — scale circles + fingering numerals only. Never decorative. */
+  --color-open-string: #245a8f;   /* Functional — ChordFretboard's open-string (fret 0, "al aire") chord-tone circle only. Never decorative. */
 
   /* Type */
   --font-display: "Rye", "Alfa Slab One", "Georgia", serif;

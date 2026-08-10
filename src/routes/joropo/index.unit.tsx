@@ -1,5 +1,5 @@
 /**
- * Strict TDD — /acordes route integration tests.
+ * Strict TDD — /joropo route integration tests.
  *
  * Integrates ChordData (12-tono circles), the ChordCarousel (which
  * renders 3x ChordFretboard internally), and ChordPlayback
@@ -30,7 +30,7 @@ vi.mock("../../audio/play-chord", () => ({
 }));
 
 import { playCircleSequence } from "../../audio/play-chord";
-import Acordes, { head } from "./index";
+import Joropo, { head } from "./index";
 
 const playCircleSequenceMock = vi.mocked(playCircleSequence);
 
@@ -39,11 +39,11 @@ beforeEach(() => {
   playCircleSequenceMock.mockResolvedValue(undefined);
 });
 
-async function renderAcordes() {
+async function renderJoropo() {
   const { screen, render, userEvent } = await createDOM();
   await render(
-    <QwikCityMockProvider url="http://localhost/acordes">
-      <Acordes />
+    <QwikCityMockProvider url="http://localhost/joropo">
+      <Joropo />
     </QwikCityMockProvider>,
   );
   return { screen, userEvent };
@@ -60,9 +60,9 @@ function findButtonByText(
   return btn as HTMLElement;
 }
 
-describe("/acordes — renders the default tono (Re) and modo (mayor)", () => {
+describe("/joropo — renders the default tono (Re) and modo (mayor)", () => {
   it("renders exactly 3 ChordFretboard instances for La con séptima, Re mayor, Sol mayor", async () => {
-    const { screen } = await renderAcordes();
+    const { screen } = await renderJoropo();
     const boards = Array.from(screen.querySelectorAll(".chord-fretboard"));
     expect(boards.length).toBe(3);
     expect(boards.map((b) => b.getAttribute("data-chord"))).toEqual([
@@ -73,12 +73,12 @@ describe("/acordes — renders the default tono (Re) and modo (mayor)", () => {
   });
 
   it("shows the big tono letter (D for Re)", async () => {
-    const { screen } = await renderAcordes();
+    const { screen } = await renderJoropo();
     expect(screen.querySelector(".tono-letter")?.textContent).toBe("D");
   });
 
   it('"Re" is checked in the tono selector, and "mayor" in the modo selector', async () => {
-    const { screen } = await renderAcordes();
+    const { screen } = await renderJoropo();
     expect(
       screen.querySelector('button[data-tono="re"]')?.getAttribute("aria-checked"),
     ).toBe("true");
@@ -90,16 +90,16 @@ describe("/acordes — renders the default tono (Re) and modo (mayor)", () => {
   });
 
   it("shows the current circle label", async () => {
-    const { screen } = await renderAcordes();
+    const { screen } = await renderJoropo();
     expect(screen.querySelector(".current-circle")?.textContent).toBe(
       "Círculo de Re mayor",
     );
   });
 });
 
-describe("/acordes — switching tono swaps the rendered chords", () => {
+describe("/joropo — switching tono swaps the rendered chords", () => {
   it("clicking Sol switches to the Sol mayor circle (Re con séptima, Sol mayor, Do mayor)", async () => {
-    const { screen, userEvent } = await renderAcordes();
+    const { screen, userEvent } = await renderJoropo();
     const solBtn = screen.querySelector(
       'button[data-tono="sol"]',
     ) as HTMLElement;
@@ -118,9 +118,9 @@ describe("/acordes — switching tono swaps the rendered chords", () => {
   });
 });
 
-describe("/acordes — switching modo swaps the rendered chords", () => {
+describe("/joropo — switching modo swaps the rendered chords", () => {
   it("clicking menor swaps to La con séptima, Re menor, Sol menor", async () => {
-    const { screen, userEvent } = await renderAcordes();
+    const { screen, userEvent } = await renderJoropo();
     const menorBtn = screen.querySelector(
       'button[data-quality="menor"]',
     ) as HTMLElement;
@@ -135,7 +135,7 @@ describe("/acordes — switching modo swaps the rendered chords", () => {
   });
 
   it("the dominant (la-con-séptima) stays rendered across both modos", async () => {
-    const { screen, userEvent } = await renderAcordes();
+    const { screen, userEvent } = await renderJoropo();
     const before = Array.from(screen.querySelectorAll(".chord-fretboard")).map(
       (b) => b.getAttribute("data-chord"),
     );
@@ -153,7 +153,7 @@ describe("/acordes — switching modo swaps the rendered chords", () => {
   });
 
   it("toggling back to mayor restores the major circle's 3 chords", async () => {
-    const { screen, userEvent } = await renderAcordes();
+    const { screen, userEvent } = await renderJoropo();
     const menorBtn = screen.querySelector(
       'button[data-quality="menor"]',
     ) as HTMLElement;
@@ -172,13 +172,13 @@ describe("/acordes — switching modo swaps the rendered chords", () => {
   });
 });
 
-describe("/acordes — rejected-audio status message", () => {
+describe("/joropo — rejected-audio status message", () => {
   it('surfaces AUDIO_UNAVAILABLE_MESSAGE in the <p role="status"> when a cell click fails to acquire audio', async () => {
     const original = globalThis.AudioContext;
     // @ts-expect-error — explicit failure mode, mirrors scale-switcher.unit.tsx
     globalThis.AudioContext = undefined;
     try {
-      const { screen, userEvent } = await renderAcordes();
+      const { screen, userEvent } = await renderJoropo();
       const cell = screen.querySelector(
         '.chord-fret--in-chord[data-string="A3"][data-fret="0"]',
       ) as HTMLElement;
@@ -194,21 +194,21 @@ describe("/acordes — rejected-audio status message", () => {
   });
 
   it('the status <p> has aria-live="polite" and is empty by default', async () => {
-    const { screen } = await renderAcordes();
+    const { screen } = await renderJoropo();
     const status = screen.querySelector('[role="status"]');
     expect(status?.getAttribute("aria-live")).toBe("polite");
     expect(status?.textContent ?? "").toBe("");
   });
 });
 
-describe('/acordes — "Tocar círculo completo" button', () => {
+describe('/joropo — "Tocar círculo completo" button', () => {
   it("renders with the exact locked label", async () => {
-    const { screen } = await renderAcordes();
+    const { screen } = await renderJoropo();
     expect(() => findButtonByText(screen, "Tocar círculo completo")).not.toThrow();
   });
 
   it("clicking it calls playCircleSequence with the active circle and a fresh AbortSignal", async () => {
-    const { screen, userEvent } = await renderAcordes();
+    const { screen, userEvent } = await renderJoropo();
     const btn = findButtonByText(screen, "Tocar círculo completo");
     await userEvent(btn, "click");
     expect(playCircleSequenceMock).toHaveBeenCalledTimes(1);
@@ -219,7 +219,7 @@ describe('/acordes — "Tocar círculo completo" button', () => {
   });
 
   it("plays the currently selected tono/modo, not always the default", async () => {
-    const { screen, userEvent } = await renderAcordes();
+    const { screen, userEvent } = await renderJoropo();
     const solBtn = screen.querySelector(
       'button[data-tono="sol"]',
     ) as HTMLElement;
@@ -231,12 +231,12 @@ describe('/acordes — "Tocar círculo completo" button', () => {
   });
 });
 
-describe("/acordes — onChordStart drives the carousel's active slide", () => {
+describe("/joropo — onChordStart drives the carousel's active slide", () => {
   it("moves the carousel track to the chord playCircleSequence reports via onChordStart", async () => {
     playCircleSequenceMock.mockImplementation(async (circle, opts) => {
       opts?.onChordStart?.(circle.chords[2], 4);
     });
-    const { screen, userEvent } = await renderAcordes();
+    const { screen, userEvent } = await renderJoropo();
     const btn = findButtonByText(screen, "Tocar círculo completo");
     await userEvent(btn, "click");
 
@@ -247,12 +247,12 @@ describe("/acordes — onChordStart drives the carousel's active slide", () => {
   });
 });
 
-describe("/acordes — Spanish head meta", () => {
-  it("has a Spanish title mentioning Acordes", () => {
+describe("/joropo — Spanish head meta", () => {
+  it("has a Spanish title mentioning Joropo", () => {
     if (typeof head === "function") {
       throw new Error("Expected the route's head export to be a plain object");
     }
-    expect(head.title).toContain("Acordes");
+    expect(head.title).toContain("Joropo");
   });
 
   it("has exactly one Spanish description meta entry", () => {
@@ -270,10 +270,10 @@ describe("/acordes — Spanish head meta", () => {
   });
 });
 
-describe("/acordes — Footer mount", () => {
-  it('renders <footer class="broadsheet-footer" role="contentinfo"> AFTER <main class="acordes">, not inside it', async () => {
-    const { screen } = await renderAcordes();
-    const main = screen.querySelector("main.acordes");
+describe("/joropo — Footer mount", () => {
+  it('renders <footer class="broadsheet-footer" role="contentinfo"> AFTER <main class="joropo">, not inside it', async () => {
+    const { screen } = await renderJoropo();
+    const main = screen.querySelector("main.joropo");
     const footer = screen.querySelector("footer.broadsheet-footer");
     expect(main).toBeTruthy();
     expect(footer).toBeTruthy();
@@ -283,8 +283,8 @@ describe("/acordes — Footer mount", () => {
     expect(position & 4).toBeTruthy();
   });
 
-  it("shows the footer credit text on /acordes", async () => {
-    const { screen } = await renderAcordes();
+  it("shows the footer credit text on /joropo", async () => {
+    const { screen } = await renderJoropo();
     const text = screen.textContent ?? "";
     expect(text).toContain(
       "Creado por braejan desde los llanos de Casanare 🇨🇴 con 💛💙❤️ para estudiantes de la bandola llanera",

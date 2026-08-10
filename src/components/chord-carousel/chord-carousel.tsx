@@ -23,7 +23,7 @@ import type { Chord, ChordRole } from "../../music/chords";
  *
  * Fully controlled: this component owns no "which chord is active"
  * state itself, only the transient drag-gesture signals. The parent
- * (the /acordes route) owns `activeIndex` so ONE signal drives both
+ * (the /joropo route) owns `activeIndex` so ONE signal drives both
  * manual clicks and the playback sync.
  *
  * Navigation wraps (index 2 -> next -> index 0), matching the circle
@@ -168,7 +168,7 @@ export const ChordCarousel = component$<ChordCarouselProps>(
         <div
           class="chord-carousel__viewport"
           role="group"
-          aria-label="Acordes del círculo — desliza o usa las flechas del teclado"
+          aria-label="Joropo — desliza o usa las flechas del teclado"
           tabIndex={0}
           data-dragging={dragActive.value ? "true" : "false"}
           onKeyDown$={onKeyDown$}
@@ -424,7 +424,7 @@ const STYLES = `
     /* The fretboard is the page's primary learning surface here —
        tighten everything above it (card padding, the role label +
        chord name + play-button stack) so it claims as much of the
-       screen as it can, matching /acordes's own mobile chrome cuts. */
+       screen as it can, matching /joropo's own mobile chrome cuts. */
     .chord-carousel {
       padding: var(--space-2) var(--space-3);
       gap: var(--space-2);

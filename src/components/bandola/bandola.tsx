@@ -1,19 +1,32 @@
 import { component$ } from "@builder.io/qwik";
 
+export interface BandolaProps {
+  /**
+   * Renders the 3rd string (y=176) snapped mid-neck instead of whole —
+   * used only by the 404 page. Defaults to `false`, so every other
+   * caller (the landing hero) renders byte-for-byte as before.
+   */
+  brokenString?: boolean;
+}
+
 /**
  * Hand-rendered bandola llanera — inline SVG silhouette in near-black ink.
  * Body on the left, neck and headstock on the right, 4 strings clearly visible.
  * Soundhole and tuning pegs are negative space (ground color shows through),
  * giving the instrument a stencil/woodcut printed feel.
  */
-export const Bandola = component$(() => {
+export const Bandola = component$(({ brokenString = false }: BandolaProps) => {
   return (
     <svg
       class="bandola-svg"
       viewBox="0 0 820 320"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Silueta de bandola llanera con cuatro cuerdas y clavijero."
+      aria-label={
+        brokenString
+          ? "Silueta de bandola llanera con una cuerda rota."
+          : "Silueta de bandola llanera con cuatro cuerdas y clavijero."
+      }
       preserveAspectRatio="xMidYMid meet"
     >
       <title>Bandola llanera</title>
@@ -24,11 +37,12 @@ export const Bandola = component$(() => {
       </desc>
 
       <defs>
-        {/* Reusable strings */}
+        {/* Reusable strings — the 3rd (y=176) is drawn separately below
+            so it can render whole or snapped without duplicating the
+            other three. */}
         <g id="bandola-strings">
           <line x1="302" y1="138" x2="640" y2="138" />
           <line x1="302" y1="158" x2="640" y2="158" />
-          <line x1="302" y1="176" x2="640" y2="176" />
           <line x1="302" y1="192" x2="640" y2="192" />
         </g>
       </defs>
@@ -154,7 +168,46 @@ export const Bandola = component$(() => {
         stroke-linecap="round"
       >
         <use href="#bandola-strings" />
+        {brokenString ? (
+          <>
+            <line x1="302" y1="176" x2="495" y2="176" />
+            <line x1="530" y1="176" x2="640" y2="176" />
+            {/* Frayed ends curling up at the break — same terracotta as
+                the string itself, so they read as its own snapped tip. */}
+            <path d="M 495,176 l 4,-6 l 4,6" fill="none" />
+            <path d="M 530,176 l -4,-6 l -4,6" fill="none" />
+          </>
+        ) : (
+          <line x1="302" y1="176" x2="640" y2="176" />
+        )}
       </g>
+
+      {brokenString && (
+        <g transform="rotate(-7 480 91)">
+          {/* Correction stamp — a paper slip pasted over the poster,
+              reusing the system's own printed-frame idiom (2px ink
+              border, square corners, paper fill). */}
+          <rect
+            x="340"
+            y="68"
+            width="280"
+            height="46"
+            fill="var(--color-paper)"
+            stroke="var(--color-ink)"
+            stroke-width="2"
+          />
+          <text
+            x="480"
+            y="97"
+            text-anchor="middle"
+            font-family="var(--font-display)"
+            font-size="26"
+            fill="var(--color-ink)"
+          >
+            NO ENCONTRADA
+          </text>
+        </g>
+      )}
     </svg>
   );
 });

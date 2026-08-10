@@ -69,9 +69,9 @@ describe("Layout — StudentMenu wiring (REQ-MENU-001/012)", () => {
   it("renders the nav exactly once (no duplicate on a different route)", async () => {
     const { screen, render } = await createDOM();
     await render(
-      <QwikCityMockProvider url="http://localhost/acordes">
+      <QwikCityMockProvider url="http://localhost/joropo">
         <Layout>
-          <main data-testid="route-main">acordes</main>
+          <main data-testid="route-main">joropo</main>
         </Layout>
       </QwikCityMockProvider>,
     );

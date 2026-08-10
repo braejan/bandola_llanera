@@ -26,7 +26,13 @@ import {
 } from "../../music/scales";
 
 /**
- * /acordes — the joropo harmonic circle (V7–I–IV), in all 12 tonos.
+ * /joropo — the joropo harmonic circle (V7–I–IV), in all 12 tonos.
+ *
+ * Named for the circle itself, not "acordes" — this page only ever
+ * shows the three chords of a joropo progression (dominant7/tonic/
+ * subdominant), not a general chord library. A future, broader
+ * "Acordes" section (every variant of every chord) is a separate,
+ * not-yet-built page.
  *
  * Owns 3 pieces of state: `tonoKey` (which of the 12 tonos), `quality`
  * (mayor/menor), and `activeChordIndex` (which of the circle's 3
@@ -133,9 +139,9 @@ export default component$(() => {
 
   return (
     <>
-      <main class="acordes" aria-label="Acordes del círculo armónico">
-        <h1 class="acordes__title font-display">Acordes</h1>
-        <p class="acordes__lede">
+      <main class="joropo" aria-label="Joropo — círculo armónico">
+        <h1 class="joropo__title font-display">Joropo</h1>
+        <p class="joropo__lede">
           El círculo armónico del joropo — elige el tono, toca cada acorde
           completo o nota por nota, y sigue el círculo completo cuando
           suena.
@@ -234,18 +240,18 @@ export default component$(() => {
 });
 
 export const head: DocumentHead = {
-  title: "Acordes — La Bandola Llanera",
+  title: "Joropo — La Bandola Llanera",
   meta: [
     {
       name: "description",
       content:
-        "Aprende los acordes del círculo armónico del joropo — dominante, tónica y subdominante — en los 12 tonos, en un diapason interactivo de bandola llanera.",
+        "Aprende el círculo armónico del joropo — dominante, tónica y subdominante — en los 12 tonos, en un diapason interactivo de bandola llanera.",
     },
   ],
 };
 
 const STYLES = `
-  .acordes {
+  .joropo {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -257,7 +263,7 @@ const STYLES = `
     gap: var(--space-4);
   }
 
-  .acordes__title {
+  .joropo__title {
     font-size: var(--fs-display);
     line-height: 1.05;
     margin: 0;
@@ -266,7 +272,7 @@ const STYLES = `
     text-align: center;
   }
 
-  .acordes__lede {
+  .joropo__lede {
     font-family: var(--font-body);
     font-size: var(--fs-heritage);
     font-weight: 500;
@@ -503,11 +509,11 @@ const STYLES = `
        rhythm, a smaller lede, a redundant summary line dropped, icon
        buttons instead of wide text ones) so it reads as the
        dominant element instead of one more stacked card. */
-    .acordes {
+    .joropo {
       padding: var(--space-3) var(--space-2);
       gap: var(--space-3);
     }
-    .acordes__lede {
+    .joropo__lede {
       font-size: 0.8125rem;
       max-width: 34ch;
     }

@@ -57,7 +57,7 @@ export const KEY_DATA: Record<Key, { pc: number; label: string }> = {
  * how printed chord references (e.g. Alejo Cordero's bandola llanera
  * charts) label roots — distinct from the Spanish solfège used
  * everywhere else in this app's copy. Used only for the big single-
- * letter tono indicator on `/acordes`.
+ * letter tono indicator on `/joropo`.
  */
 export const KEY_LETTER: Record<Key, string> = {
   do: "C",
