@@ -36,7 +36,7 @@
  * these are expected to be corrected key-by-key against the real
  * instrument as they get tested.
  */
-import { KEY_DATA, ALL_KEYS_LIST, getKeyLetter, type Key } from "./scales";
+import { KEY_DATA, ALL_KEYS_LIST, KEY_LETTER, getKeyLetter, type Key } from "./scales";
 
 /** The four bandola llanera strings, low to high. */
 export type StringId = "A3" | "D4" | "A4" | "E5";
@@ -146,11 +146,107 @@ function dominant7Voicing(rootPitchClass: number) {
 
 const QUALITIES: readonly CircleQuality[] = ["mayor", "menor"];
 
+/**
+ * The single source of truth for "what pitch class is note letter X":
+ * derived from `scales.ts`'s own `KEY_LETTER` table (sharps only, no
+ * flats — e.g. "C#", never "Db") rather than a second hand-typed copy.
+ * Keyed by ASCII "#" — `KEY_LETTER` itself spells sharps as "♯", but
+ * every call site here writes plain "#", so lookups normalize to it.
+ */
+const LETTER_TO_PC: ReadonlyMap<string, number> = new Map(
+  ALL_KEYS_LIST.map((key) => [KEY_LETTER[key].replace("♯", "#"), KEY_DATA[key].pc]),
+);
+
+/** Lowest fret (0–11) at which `note` sounds on `stringId`. */
+function fretForNote(stringId: StringId, note: string): number {
+  const notePc = LETTER_TO_PC.get(note);
+  if (notePc === undefined) {
+    throw new Error(`Unknown note letter: ${note}`);
+  }
+  const openPc = OPEN_MIDI[stringId] % 12;
+  return ((notePc - openPc) % 12 + 12) % 12;
+}
+
+/**
+ * Builds one verified voicing entry FROM ITS NOTE LETTER — the fret and
+ * midi are derived, never hand-typed, so a chord's stated note (e.g.
+ * "C on A3") and its stored fret can never silently disagree the way a
+ * hand-computed fret number could. This is how `VOICING_OVERRIDES`
+ * below should read: string-by-string, exactly as the notes are
+ * confirmed against the physical instrument.
+ */
+function at(stringId: StringId, note: string): ChordVoicingEntry {
+  const fret = fretForNote(stringId, note);
+  return { stringId, fret, midi: OPEN_MIDI[stringId] + fret };
+}
+
+/**
+ * Manually verified voicings that override the generated formula,
+ * keyed by chord id. Confirmed against the physical instrument one
+ * chord at a time — see the KNOWN LIMITATION note above: the formula's
+ * single fixed role-per-string shape doesn't generalize across every
+ * tono, so verified chords are locked here as they're tested.
+ */
+const VOICING_OVERRIDES: Partial<Record<string, readonly ChordVoicingEntry[]>> =
+  {
+    // Do circle — dominant7 (G7).
+    "sol-con-septima": [at("A3", "B"), at("D4", "F"), at("A4", "D"), at("E5", "G")],
+    // Do circle — tonic.
+    "do-mayor": [at("A3", "C"), at("D4", "E"), at("A4", "C"), at("E5", "G")],
+    "do-menor": [at("A3", "C"), at("D4", "D#"), at("A4", "C"), at("E5", "G")],
+    // Do circle — subdominant (Fa as IV of Do).
+    "fa-mayor-cuarta": [at("A3", "C"), at("D4", "F"), at("A4", "A"), at("E5", "F")],
+    "fa-menor-cuarta": [at("A3", "C"), at("D4", "F"), at("A4", "C"), at("E5", "G#")],
+    // Sol circle — subdominant (Do as IV of Sol) reuses the confirmed
+    // do-mayor/do-menor shape: same chord, same physical fingering.
+    "do-mayor-cuarta": [at("A3", "C"), at("D4", "E"), at("A4", "C"), at("E5", "G")],
+    "do-menor-cuarta": [at("A3", "C"), at("D4", "D#"), at("A4", "C"), at("E5", "G")],
+    // Fa circle — tonic (Fa's own I) reuses the confirmed
+    // fa-mayor-cuarta shape. fa-menor's formula output already matches
+    // fa-menor-cuarta by coincidence, so it needs no override.
+    "fa-mayor": [at("A3", "C"), at("D4", "F"), at("A4", "A"), at("E5", "F")],
+    // Do# circle — dominant7 (G#7).
+    "sol#-con-septima": [at("A3", "C"), at("D4", "F#"), at("A4", "D#"), at("E5", "G#")],
+    // Do# circle — tonic.
+    "do#-mayor": [at("A3", "C#"), at("D4", "F"), at("A4", "C#"), at("E5", "G#")],
+    "do#-menor": [at("A3", "C#"), at("D4", "E"), at("A4", "C#"), at("E5", "G#")],
+    // Do# circle — subdominant (F# as IV of Do#).
+    "fa#-mayor-cuarta": [at("A3", "C#"), at("D4", "F#"), at("A4", "A#"), at("E5", "F#")],
+    "fa#-menor-cuarta": [at("A3", "C#"), at("D4", "F#"), at("A4", "A"), at("E5", "F#")],
+    // Reference chart cross-checks (Alejo Cordero, "Acordes para Bandola
+    // Llanera") — do-mayor/do-menor already matched exactly and needed
+    // no change; do-con-septima (C7, dominant of Fa) is new.
+    "do-con-septima": [at("A3", "C"), at("D4", "E"), at("A4", "A#"), at("E5", "G")],
+    "do#-con-septima": [at("A3", "C#"), at("D4", "F"), at("A4", "B"), at("E5", "G#")],
+    "re#-con-septima": [at("A3", "A#"), at("D4", "D#"), at("A4", "C#"), at("E5", "G")],
+    "mi-con-septima": [at("A3", "B"), at("D4", "E"), at("A4", "D"), at("E5", "G#")],
+    "fa-con-septima": [at("A3", "C"), at("D4", "D#"), at("A4", "A"), at("E5", "F")],
+    // F#'s own tonic reuses the confirmed fa#-mayor-cuarta/fa#-menor-cuarta shape.
+    "fa#-mayor": [at("A3", "C#"), at("D4", "F#"), at("A4", "A#"), at("E5", "F#")],
+    "fa#-menor": [at("A3", "C#"), at("D4", "F#"), at("A4", "A"), at("E5", "F#")],
+    // G's own tonic — the raw tonic formula gives an unplayable fret5/7
+    // spread; the real shape matches sol-mayor-cuarta/sol-menor-cuarta
+    // (the subdominant-of-Re shape) exactly, even though it's generated
+    // by a different formula, so it needs its own override here too.
+    "sol-mayor": [at("A3", "B"), at("D4", "D"), at("A4", "B"), at("E5", "G")],
+    "sol-menor": [at("A3", "A#"), at("D4", "D"), at("A4", "A#"), at("E5", "G")],
+    // G#'s own tonic.
+    "sol#-mayor": [at("A3", "C"), at("D4", "D#"), at("A4", "C"), at("E5", "G#")],
+    "sol#-menor": [at("A3", "B"), at("D4", "D#"), at("A4", "B"), at("E5", "G#")],
+    // A#'s own tonic.
+    "la#-mayor": [at("A3", "A#"), at("D4", "D"), at("A4", "A#"), at("E5", "F")],
+    // B's own tonic and dominant7.
+    "si-mayor": [at("A3", "B"), at("D4", "D#"), at("A4", "B"), at("E5", "F#")],
+    "si-menor": [at("A3", "B"), at("D4", "D"), at("A4", "B"), at("E5", "F#")],
+    "si-con-septima": [at("A3", "B"), at("D4", "D#"), at("A4", "A"), at("E5", "F#")],
+  };
+
 /** One dominant7 chord per tono — shared across a key's mayor/menor circles. */
 export const DOMINANT7_CHORDS: readonly Chord[] = ALL_KEYS_LIST.map((key) => {
   const pc = KEY_DATA[key].pc;
+  const id = `${key}-con-septima`;
   return {
-    id: `${key}-con-septima`,
+    id,
     // Letter-shorthand chord symbol (e.g. "A7"), matching the printed
     // bandola llanera chord-reference convention — not the Spanish
     // "La con séptima" phrasing used for the tonic/subdominant names.
@@ -158,7 +254,7 @@ export const DOMINANT7_CHORDS: readonly Chord[] = ALL_KEYS_LIST.map((key) => {
     rootPitchClass: pc,
     intervals: [0, MAJOR_THIRD, PERFECT_FIFTH, MINOR_SEVENTH],
     role: "dominant7",
-    voicing: dominant7Voicing(pc),
+    voicing: VOICING_OVERRIDES[id] ?? dominant7Voicing(pc),
   };
 });
 
@@ -170,12 +266,14 @@ function buildTriad(
 ): Chord {
   const pc = KEY_DATA[key].pc;
   const thirdInterval = quality === "mayor" ? MAJOR_THIRD : MINOR_THIRD;
-  const voicing =
+  const id = `${key}-${quality}${idSuffix}`;
+  const computedVoicing =
     role === "tonic"
       ? tonicVoicing(pc, thirdInterval)
       : subdominantVoicing(pc, thirdInterval);
+  const voicing = VOICING_OVERRIDES[id] ?? computedVoicing;
   return {
-    id: `${key}-${quality}${idSuffix}`,
+    id,
     // Letter-shorthand chord symbol (e.g. "D", "Dm"), matching the
     // printed bandola llanera chord-reference convention and the
     // dominant7 chords' own "A7"-style naming.
