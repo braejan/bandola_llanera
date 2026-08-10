@@ -103,6 +103,18 @@ describe("chords — the fret formula reproduces every locked D-circle voicing",
     expect(sortedMidis(getChordById("re-menor")!)).toEqual([57, 62, 69, 77]);
   });
 
+  it("re-mayor-cuarta (D as IV of La) reuses the confirmed re-mayor shape, not the raw subdominant formula's fret9/7/9/10", () => {
+    expect(sortedMidis(getChordById("re-mayor-cuarta")!)).toEqual([
+      57, 62, 69, 78,
+    ]);
+  });
+
+  it("re-menor-cuarta (Dm as IV of La menor) reuses the confirmed re-menor shape", () => {
+    expect(sortedMidis(getChordById("re-menor-cuarta")!)).toEqual([
+      57, 62, 69, 77,
+    ]);
+  });
+
   it("la-con-septima (dominant of Re) voicing is exactly [57, 64, 73, 79]", () => {
     const chord = getChordById("la-con-septima")!;
     expect(sortedMidis(chord)).toEqual([57, 64, 73, 79]);
@@ -205,45 +217,6 @@ describe("chords — Do circle voicings, corrected against the instrument (overr
     ]);
   });
 
-  it("do-mayor-cuarta (Do as IV of Sol) reuses the confirmed do-mayor shape: A3=3, D4=2, A4=3, E5=3", () => {
-    const frets = byString("do-mayor-cuarta");
-    expect(frets.A3).toBe(3);
-    expect(frets.D4).toBe(2);
-    expect(frets.A4).toBe(3);
-    expect(frets.E5).toBe(3);
-    expect(sortedMidis(getChordById("do-mayor-cuarta")!)).toEqual([
-      60, 64, 72, 79,
-    ]);
-  });
-
-  it("do-menor-cuarta (Do as IV of Sol menor) reuses the confirmed do-menor shape: A3=3, D4=1, A4=3, E5=3", () => {
-    const frets = byString("do-menor-cuarta");
-    expect(frets.A3).toBe(3);
-    expect(frets.D4).toBe(1);
-    expect(frets.A4).toBe(3);
-    expect(frets.E5).toBe(3);
-    expect(sortedMidis(getChordById("do-menor-cuarta")!)).toEqual([
-      60, 63, 72, 79,
-    ]);
-  });
-
-  it("fa-mayor (Fa's own tonic) reuses the confirmed F shape: A3=3, D4=3, A4=open(0), E5=1", () => {
-    const frets = byString("fa-mayor");
-    expect(frets.A3).toBe(3);
-    expect(frets.D4).toBe(3);
-    expect(frets.A4).toBe(0);
-    expect(frets.E5).toBe(1);
-    expect(sortedMidis(getChordById("fa-mayor")!)).toEqual([60, 65, 69, 77]);
-  });
-
-  it("fa-menor (Fa's own tonic) already matches the confirmed Fm shape by formula: A3=3, D4=3, A4=3, E5=4", () => {
-    const frets = byString("fa-menor");
-    expect(frets.A3).toBe(3);
-    expect(frets.D4).toBe(3);
-    expect(frets.A4).toBe(3);
-    expect(frets.E5).toBe(4);
-    expect(sortedMidis(getChordById("fa-menor")!)).toEqual([60, 65, 72, 80]);
-  });
 });
 
 describe("chords — Do# circle voicings, corrected against the instrument", () => {
@@ -338,6 +311,17 @@ describe("chords — Alejo Cordero reference chart cross-check (per key, mayor/m
     ]);
   });
 
+  it("re-con-septima (D7, dominant of Sol) is A3=open(0), D4=open(0), A4=3, E5=2", () => {
+    const frets = byString("re-con-septima");
+    expect(frets.A3).toBe(0);
+    expect(frets.D4).toBe(0);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("re-con-septima")!)).toEqual([
+      57, 62, 72, 78,
+    ]);
+  });
+
   it("re#-con-septima (D#7/Eb7, dominant of Sol#) is A3=1, D4=1, A4=4, E5=3", () => {
     const frets = byString("re#-con-septima");
     expect(frets.A3).toBe(1);
@@ -360,33 +344,15 @@ describe("chords — Alejo Cordero reference chart cross-check (per key, mayor/m
     ]);
   });
 
-  it("fa-con-septima (F7, dominant of La#) is A3=3, D4=1, A4=open(0), E5=1", () => {
+  it("fa-con-septima (F7, dominant of La#) is A3=open(0), D4=1, A4=3, E5=1", () => {
     const frets = byString("fa-con-septima");
-    expect(frets.A3).toBe(3);
+    expect(frets.A3).toBe(0);
     expect(frets.D4).toBe(1);
-    expect(frets.A4).toBe(0);
+    expect(frets.A4).toBe(3);
     expect(frets.E5).toBe(1);
     expect(sortedMidis(getChordById("fa-con-septima")!)).toEqual([
-      60, 63, 69, 77,
+      57, 63, 72, 77,
     ]);
-  });
-
-  it("fa#-mayor (F#'s own tonic) reuses the confirmed fa#-mayor-cuarta shape", () => {
-    const frets = byString("fa#-mayor");
-    expect(frets.A3).toBe(4);
-    expect(frets.D4).toBe(4);
-    expect(frets.A4).toBe(1);
-    expect(frets.E5).toBe(2);
-    expect(sortedMidis(getChordById("fa#-mayor")!)).toEqual([61, 66, 70, 78]);
-  });
-
-  it("fa#-menor (F#'s own tonic) reuses the confirmed fa#-menor-cuarta shape", () => {
-    const frets = byString("fa#-menor");
-    expect(frets.A3).toBe(4);
-    expect(frets.D4).toBe(4);
-    expect(frets.A4).toBe(0);
-    expect(frets.E5).toBe(2);
-    expect(sortedMidis(getChordById("fa#-menor")!)).toEqual([61, 66, 69, 78]);
   });
 
   it("sol-mayor (G) is A3=2, D4=open(0), A4=2, E5=3 — NOT the raw formula's fret5/7 guess", () => {
@@ -433,6 +399,24 @@ describe("chords — Alejo Cordero reference chart cross-check (per key, mayor/m
     expect(sortedMidis(getChordById("sol#-menor")!)).toEqual([59, 63, 71, 80]);
   });
 
+  it("la-mayor (A's own tonic) is A3=open(0), D4=2, A4=4, E5=5", () => {
+    const frets = byString("la-mayor");
+    expect(frets.A3).toBe(0);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(4);
+    expect(frets.E5).toBe(5);
+    expect(sortedMidis(getChordById("la-mayor")!)).toEqual([57, 64, 73, 81]);
+  });
+
+  it("la-menor (Am's own tonic) is A3=open(0), D4=2, A4=3, E5=5", () => {
+    const frets = byString("la-menor");
+    expect(frets.A3).toBe(0);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(5);
+    expect(sortedMidis(getChordById("la-menor")!)).toEqual([57, 64, 72, 81]);
+  });
+
   it("la#-mayor (Bb/A#'s own tonic) is A3=1, D4=open(0), A4=1, E5=1", () => {
     const frets = byString("la#-mayor");
     expect(frets.A3).toBe(1);
@@ -440,6 +424,39 @@ describe("chords — Alejo Cordero reference chart cross-check (per key, mayor/m
     expect(frets.A4).toBe(1);
     expect(frets.E5).toBe(1);
     expect(sortedMidis(getChordById("la#-mayor")!)).toEqual([58, 62, 70, 77]);
+  });
+
+  it("la#-menor (A#m's own tonic) is A3=1, D4=3, A4=4, E5=1", () => {
+    const frets = byString("la#-menor");
+    expect(frets.A3).toBe(1);
+    expect(frets.D4).toBe(3);
+    expect(frets.A4).toBe(4);
+    expect(frets.E5).toBe(1);
+    expect(sortedMidis(getChordById("la#-menor")!)).toEqual([58, 65, 73, 77]);
+  });
+
+  it("re#-mayor (D#'s own tonic) is A3=1, D4=1, A4=1, E5=3", () => {
+    const frets = byString("re#-mayor");
+    expect(frets.A3).toBe(1);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(1);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("re#-mayor")!)).toEqual([58, 63, 70, 79]);
+  });
+
+  it("re#-menor (D#m's own tonic) is A3=1, D4=1, A4=1, E5=2", () => {
+    const frets = byString("re#-menor");
+    expect(frets.A3).toBe(1);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(1);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("re#-menor")!)).toEqual([58, 63, 70, 78]);
+  });
+
+  it("re#-menor-cuarta (D#m as IV of La# menor) reuses the confirmed re#-menor shape, not the raw subdominant formula's fret9/8/9/11", () => {
+    expect(sortedMidis(getChordById("re#-menor-cuarta")!)).toEqual([
+      58, 63, 70, 78,
+    ]);
   });
 
   it("si-mayor (B) is A3=2, D4=1, A4=2, E5=2", () => {
@@ -469,6 +486,78 @@ describe("chords — Alejo Cordero reference chart cross-check (per key, mayor/m
     expect(sortedMidis(getChordById("si-con-septima")!)).toEqual([
       59, 63, 69, 78,
     ]);
+  });
+
+  it("fa#-con-septima (F#7, dominant of Si) is A3=4, D4=4, A4=1, E5=open(0)", () => {
+    const frets = byString("fa#-con-septima");
+    expect(frets.A3).toBe(4);
+    expect(frets.D4).toBe(4);
+    expect(frets.A4).toBe(1);
+    expect(frets.E5).toBe(0);
+    expect(sortedMidis(getChordById("fa#-con-septima")!)).toEqual([
+      61, 66, 70, 76,
+    ]);
+  });
+
+  it("mi-mayor (E's own tonic) is A3=2, D4=2, A4=2, E5=4", () => {
+    const frets = byString("mi-mayor");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(2);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("mi-mayor")!)).toEqual([59, 64, 71, 80]);
+  });
+
+  it("mi-mayor-cuarta (E as IV of Si) reuses the confirmed mi-mayor shape, not the raw subdominant formula's fret11/9/11/0", () => {
+    expect(sortedMidis(getChordById("mi-mayor-cuarta")!)).toEqual([
+      59, 64, 71, 80,
+    ]);
+  });
+
+  it("mi-menor (Em's own tonic) is A3=2, D4=2, A4=2, E5=3", () => {
+    const frets = byString("mi-menor");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(2);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("mi-menor")!)).toEqual([59, 64, 71, 79]);
+  });
+
+  it("mi-menor-cuarta (Em as IV of Si menor) reuses the confirmed mi-menor shape, not the raw subdominant formula's fret10/9/10/0", () => {
+    expect(sortedMidis(getChordById("mi-menor-cuarta")!)).toEqual([
+      59, 64, 71, 79,
+    ]);
+  });
+});
+
+describe("chords — a confirmed triad has ONE voicing, shared by every role it plays", () => {
+  // Every key+quality with a manually verified VOICING_OVERRIDES entry.
+  // Each one's tonic id (e.g. "la-mayor") and subdominant id (e.g.
+  // "la-mayor-cuarta") must resolve to the exact same voicing array —
+  // proof there is a single stored shape, not two hand-typed copies.
+  const CONFIRMED_TRIAD_KEYS = [
+    "re-mayor", "re-menor",
+    "do-mayor", "do-menor",
+    "fa-mayor", "fa-menor",
+    "do#-mayor", "do#-menor",
+    "fa#-mayor", "fa#-menor",
+    "sol-mayor", "sol-menor",
+    "sol#-mayor", "sol#-menor",
+    "la-mayor", "la-menor",
+    "la#-mayor", "la#-menor",
+    "re#-mayor", "re#-menor",
+    "si-mayor", "si-menor",
+    "mi-mayor", "mi-menor",
+  ];
+
+  it("every confirmed triad's tonic and subdominant ids share the identical voicing array by reference", () => {
+    for (const key of CONFIRMED_TRIAD_KEYS) {
+      const tonic = getChordById(key);
+      const subdominant = getChordById(`${key}-cuarta`);
+      expect(tonic).toBeDefined();
+      expect(subdominant).toBeDefined();
+      expect(subdominant!.voicing).toBe(tonic!.voicing);
+    }
   });
 });
 
