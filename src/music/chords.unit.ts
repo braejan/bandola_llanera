@@ -147,6 +147,331 @@ describe("chords — the fret formula reproduces every locked D-circle voicing",
   });
 });
 
+describe("chords — Do circle voicings, corrected against the instrument (overrides the generated formula)", () => {
+  function byString(id: string): Record<StringId, number> {
+    return Object.fromEntries(
+      getChordById(id)!.voicing.map((v) => [v.stringId, v.fret]),
+    ) as Record<StringId, number>;
+  }
+
+  it("sol-con-septima (dominant of Do) is A3=2, D4=3, A4=5, E5=3", () => {
+    const frets = byString("sol-con-septima");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(3);
+    expect(frets.A4).toBe(5);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("sol-con-septima")!)).toEqual([
+      59, 65, 74, 79,
+    ]);
+  });
+
+  it("do-mayor is A3=3, D4=2, A4=3, E5=3", () => {
+    const frets = byString("do-mayor");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("do-mayor")!)).toEqual([60, 64, 72, 79]);
+  });
+
+  it("do-menor is A3=3, D4=1, A4=3, E5=3", () => {
+    const frets = byString("do-menor");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("do-menor")!)).toEqual([60, 63, 72, 79]);
+  });
+
+  it("fa-mayor-cuarta (subdominant of Do mayor) is A3=3, D4=3, A4=open(0), E5=1", () => {
+    const frets = byString("fa-mayor-cuarta");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(3);
+    expect(frets.A4).toBe(0);
+    expect(frets.E5).toBe(1);
+    expect(sortedMidis(getChordById("fa-mayor-cuarta")!)).toEqual([
+      60, 65, 69, 77,
+    ]);
+  });
+
+  it("fa-menor-cuarta (subdominant of Do menor) is A3=3, D4=3, A4=3, E5=4", () => {
+    const frets = byString("fa-menor-cuarta");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(3);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("fa-menor-cuarta")!)).toEqual([
+      60, 65, 72, 80,
+    ]);
+  });
+
+  it("do-mayor-cuarta (Do as IV of Sol) reuses the confirmed do-mayor shape: A3=3, D4=2, A4=3, E5=3", () => {
+    const frets = byString("do-mayor-cuarta");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("do-mayor-cuarta")!)).toEqual([
+      60, 64, 72, 79,
+    ]);
+  });
+
+  it("do-menor-cuarta (Do as IV of Sol menor) reuses the confirmed do-menor shape: A3=3, D4=1, A4=3, E5=3", () => {
+    const frets = byString("do-menor-cuarta");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("do-menor-cuarta")!)).toEqual([
+      60, 63, 72, 79,
+    ]);
+  });
+
+  it("fa-mayor (Fa's own tonic) reuses the confirmed F shape: A3=3, D4=3, A4=open(0), E5=1", () => {
+    const frets = byString("fa-mayor");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(3);
+    expect(frets.A4).toBe(0);
+    expect(frets.E5).toBe(1);
+    expect(sortedMidis(getChordById("fa-mayor")!)).toEqual([60, 65, 69, 77]);
+  });
+
+  it("fa-menor (Fa's own tonic) already matches the confirmed Fm shape by formula: A3=3, D4=3, A4=3, E5=4", () => {
+    const frets = byString("fa-menor");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(3);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("fa-menor")!)).toEqual([60, 65, 72, 80]);
+  });
+});
+
+describe("chords — Do# circle voicings, corrected against the instrument", () => {
+  function byString(id: string): Record<StringId, number> {
+    return Object.fromEntries(
+      getChordById(id)!.voicing.map((v) => [v.stringId, v.fret]),
+    ) as Record<StringId, number>;
+  }
+
+  it("sol#-con-septima (dominant of Do#, G#7) is A3=3, D4=4, A4=6, E5=4", () => {
+    const frets = byString("sol#-con-septima");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(4);
+    expect(frets.A4).toBe(6);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("sol#-con-septima")!)).toEqual([
+      60, 66, 75, 80,
+    ]);
+  });
+
+  it("do#-mayor (C#) is A3=4, D4=3, A4=4, E5=4", () => {
+    const frets = byString("do#-mayor");
+    expect(frets.A3).toBe(4);
+    expect(frets.D4).toBe(3);
+    expect(frets.A4).toBe(4);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("do#-mayor")!)).toEqual([
+      61, 65, 73, 80,
+    ]);
+  });
+
+  it("do#-menor (C#m) is A3=4, D4=2 (E — the minor 3rd, not D# at fret 1), A4=4, E5=4", () => {
+    const frets = byString("do#-menor");
+    expect(frets.A3).toBe(4);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(4);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("do#-menor")!)).toEqual([
+      61, 64, 73, 80,
+    ]);
+  });
+
+  it("fa#-mayor-cuarta (subdominant of Do# mayor, F#) is A3=4, D4=4, A4=1, E5=2", () => {
+    const frets = byString("fa#-mayor-cuarta");
+    expect(frets.A3).toBe(4);
+    expect(frets.D4).toBe(4);
+    expect(frets.A4).toBe(1);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("fa#-mayor-cuarta")!)).toEqual([
+      61, 66, 70, 78,
+    ]);
+  });
+
+  it("fa#-menor-cuarta (subdominant of Do# menor, F#m) is A3=4, D4=4, A4=open(0), E5=2", () => {
+    const frets = byString("fa#-menor-cuarta");
+    expect(frets.A3).toBe(4);
+    expect(frets.D4).toBe(4);
+    expect(frets.A4).toBe(0);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("fa#-menor-cuarta")!)).toEqual([
+      61, 66, 69, 78,
+    ]);
+  });
+});
+
+describe("chords — Alejo Cordero reference chart cross-check (per key, mayor/menor/dominant7)", () => {
+  function byString(id: string): Record<StringId, number> {
+    return Object.fromEntries(
+      getChordById(id)!.voicing.map((v) => [v.stringId, v.fret]),
+    ) as Record<StringId, number>;
+  }
+
+  it("do-con-septima (C7, dominant of Fa) is A3=3, D4=2, A4=1, E5=3", () => {
+    const frets = byString("do-con-septima");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(1);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("do-con-septima")!)).toEqual([
+      60, 64, 70, 79,
+    ]);
+  });
+
+  it("do#-con-septima (C#7, dominant of Fa#) is A3=4, D4=3, A4=2, E5=4", () => {
+    const frets = byString("do#-con-septima");
+    expect(frets.A3).toBe(4);
+    expect(frets.D4).toBe(3);
+    expect(frets.A4).toBe(2);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("do#-con-septima")!)).toEqual([
+      61, 65, 71, 80,
+    ]);
+  });
+
+  it("re#-con-septima (D#7/Eb7, dominant of Sol#) is A3=1, D4=1, A4=4, E5=3", () => {
+    const frets = byString("re#-con-septima");
+    expect(frets.A3).toBe(1);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(4);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("re#-con-septima")!)).toEqual([
+      58, 63, 73, 79,
+    ]);
+  });
+
+  it("mi-con-septima (E7, dominant of La) is A3=2, D4=2, A4=5, E5=4", () => {
+    const frets = byString("mi-con-septima");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(2);
+    expect(frets.A4).toBe(5);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("mi-con-septima")!)).toEqual([
+      59, 64, 74, 80,
+    ]);
+  });
+
+  it("fa-con-septima (F7, dominant of La#) is A3=3, D4=1, A4=open(0), E5=1", () => {
+    const frets = byString("fa-con-septima");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(0);
+    expect(frets.E5).toBe(1);
+    expect(sortedMidis(getChordById("fa-con-septima")!)).toEqual([
+      60, 63, 69, 77,
+    ]);
+  });
+
+  it("fa#-mayor (F#'s own tonic) reuses the confirmed fa#-mayor-cuarta shape", () => {
+    const frets = byString("fa#-mayor");
+    expect(frets.A3).toBe(4);
+    expect(frets.D4).toBe(4);
+    expect(frets.A4).toBe(1);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("fa#-mayor")!)).toEqual([61, 66, 70, 78]);
+  });
+
+  it("fa#-menor (F#'s own tonic) reuses the confirmed fa#-menor-cuarta shape", () => {
+    const frets = byString("fa#-menor");
+    expect(frets.A3).toBe(4);
+    expect(frets.D4).toBe(4);
+    expect(frets.A4).toBe(0);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("fa#-menor")!)).toEqual([61, 66, 69, 78]);
+  });
+
+  it("sol-mayor (G) is A3=2, D4=open(0), A4=2, E5=3 — NOT the raw formula's fret5/7 guess", () => {
+    const frets = byString("sol-mayor");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(0);
+    expect(frets.A4).toBe(2);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("sol-mayor")!)).toEqual([59, 62, 71, 79]);
+  });
+
+  it("sol-menor (Gm) is A3=1, D4=open(0), A4=1, E5=3", () => {
+    const frets = byString("sol-menor");
+    expect(frets.A3).toBe(1);
+    expect(frets.D4).toBe(0);
+    expect(frets.A4).toBe(1);
+    expect(frets.E5).toBe(3);
+    expect(sortedMidis(getChordById("sol-menor")!)).toEqual([58, 62, 70, 79]);
+  });
+
+  it("sol#-con-septima (Ab7/G#7) already matches the physically-tested override — reference chart confirms 3 of 4 notes", () => {
+    const frets = byString("sol#-con-septima");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(4);
+    expect(frets.A4).toBe(6);
+    expect(frets.E5).toBe(4);
+  });
+
+  it("sol#-mayor (Ab/G#'s own tonic) is A3=3, D4=1, A4=3, E5=4", () => {
+    const frets = byString("sol#-mayor");
+    expect(frets.A3).toBe(3);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(3);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("sol#-mayor")!)).toEqual([60, 63, 72, 80]);
+  });
+
+  it("sol#-menor (Abm/G#m) is A3=2, D4=1, A4=2, E5=4", () => {
+    const frets = byString("sol#-menor");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(2);
+    expect(frets.E5).toBe(4);
+    expect(sortedMidis(getChordById("sol#-menor")!)).toEqual([59, 63, 71, 80]);
+  });
+
+  it("la#-mayor (Bb/A#'s own tonic) is A3=1, D4=open(0), A4=1, E5=1", () => {
+    const frets = byString("la#-mayor");
+    expect(frets.A3).toBe(1);
+    expect(frets.D4).toBe(0);
+    expect(frets.A4).toBe(1);
+    expect(frets.E5).toBe(1);
+    expect(sortedMidis(getChordById("la#-mayor")!)).toEqual([58, 62, 70, 77]);
+  });
+
+  it("si-mayor (B) is A3=2, D4=1, A4=2, E5=2", () => {
+    const frets = byString("si-mayor");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(2);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("si-mayor")!)).toEqual([59, 63, 71, 78]);
+  });
+
+  it("si-menor (Bm) is A3=2, D4=open(0), A4=2, E5=2", () => {
+    const frets = byString("si-menor");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(0);
+    expect(frets.A4).toBe(2);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("si-menor")!)).toEqual([59, 62, 71, 78]);
+  });
+
+  it("si-con-septima (B7, dominant of Mi) is A3=2, D4=1, A4=open(0), E5=2", () => {
+    const frets = byString("si-con-septima");
+    expect(frets.A3).toBe(2);
+    expect(frets.D4).toBe(1);
+    expect(frets.A4).toBe(0);
+    expect(frets.E5).toBe(2);
+    expect(sortedMidis(getChordById("si-con-septima")!)).toEqual([
+      59, 63, 69, 78,
+    ]);
+  });
+});
+
 describe("chords — pitch-class correctness (the generated notes are always right)", () => {
   it("every chord's voicing covers every one of its own interval pitch classes at least once", () => {
     for (const chord of ALL_CHORDS) {
