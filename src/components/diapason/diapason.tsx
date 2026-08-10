@@ -37,15 +37,21 @@ import {
  *     centered on the circle.
  *   - Non-scale notes are paper-knockout labels on the string (ink-tint
  *     text) so the string line does not cross the letter.
- *   - Open strings (fret 0, at the nut) are identified by a hollow
- *     digitation-red ring spanning the full string width. When the open
- *     string produces a tone in the current scale, a small "abierta"
- *     marker is shown as the "preferred" fingering indicator. The
- *     fretted equivalent on a different string (e.g. A3 fret 5 = D4
- *     open in Re mayor) shows a small "(=abierta)" label so the player
- *     knows the open string is the alternative.
+ *   - Open strings (fret 0, at the nut) are the headstock cell — plain
+ *     text always (string name + a small "abierta" marker when the
+ *     open string is in the current scale), no circle. The regular
+ *     fret-0 cell right next to it (same pitch, different DOM element
+ *     — see FRET_COLUMNS) carries the actual open-string SIGNAL: a
+ *     filled circle in the functional open-string blue rather than
+ *     the red digitation color, so "played open, not fretted" reads
+ *     as a different signal from a fretted in-scale note, matching
+ *     ChordFretboard's open-string treatment. The fretted equivalent
+ *     on a different string (e.g. A3 fret 5 = D4 open in Re mayor)
+ *     shows a small "(=abierta)" label so the player knows the open
+ *     string is the alternative.
  *   - Tonic (the open string that is also the root of the scale) is
- *     identified by position and the red circle — no extra cell marker.
+ *     identified by position and the blue circle on its fret-0 cell —
+ *     no extra cell marker.
  *
  * String order top to bottom: A3, D4, A4, E5 (conventional tablature
  * order, low to high).
@@ -133,31 +139,50 @@ const FLASH_MS = 400;
  * `document` global, so this works identically in tests, SSR, and the
  * browser).
  *
+ * - An event carrying explicit `stringId`/`fret` (currently only
+ *   `playScaleSequence`'s events) targets that exact regular fret
+ *   cell directly — no ambiguity, since the sequence itself already
+ *   decided which string the note belongs to as part of its
+ *   never-double-back walk up the neck. Matching by `midi` instead
+ *   (the previous approach) can't express that decision: several
+ *   strings can share one MIDI (A3 fret 5 = D4 open), so picking among
+ *   them by MIDI alone routinely disagreed with the sequence's own
+ *   string choice and made the animation visibly bounce backward
+ *   between strings.
  * - `tuning-${label}` events (e.g. "tuning-A3") target the open-string
- *   headstock cell for that string.
- * - `scale-*` events carry a `midi` that may match several cells
- *   (an open string AND a fretted position on another string share
- *   the same pitch). The open-string (headstock) cell is preferred —
- *   it is the natural mapping a player expects for that pitch class.
+ *   pitch for that string.
+ * - Any other event carries only a `midi`, which may match several
+ *   cells (an open string AND a fretted position on another string
+ *   share the same pitch) — the REGULAR fret-0 cell (`.fret[data-fret="0"]`,
+ *   in the FRET_COLUMNS loop) is preferred over the headstock cell
+ *   next to it, since the fret-0 cell is what carries the open-string
+ *   blue circle (the headstock cell is plain text).
  */
 function locateAnimTargetCell(
   root: Element,
   event: AnimEvent,
 ): HTMLElement | null {
+  if (event.stringId !== undefined && event.fret !== undefined) {
+    return root.querySelector<HTMLElement>(
+      `.fret[data-string="${event.stringId}"][data-fret="${event.fret}"]:not(.diapason-headstock-cell)`,
+    );
+  }
   if (event.targetId.startsWith("tuning-")) {
     const label = event.targetId.slice("tuning-".length);
     return root.querySelector<HTMLElement>(
-      `.diapason-headstock-cell[data-string="${label}"][data-fret="0"]`,
+      `.fret[data-string="${label}"][data-fret="0"]:not(.diapason-headstock-cell)`,
     );
   }
   const candidates = Array.from(
     root.querySelectorAll<HTMLElement>(`[data-midi="${event.midi}"]`),
   );
   if (candidates.length === 0) return null;
-  const openString = candidates.find((el) =>
-    el.classList.contains("diapason-headstock-cell"),
+  const openStringCell = candidates.find(
+    (el) =>
+      el.getAttribute("data-fret") === "0" &&
+      !el.classList.contains("diapason-headstock-cell"),
   );
-  return openString ?? candidates[0];
+  return openStringCell ?? candidates[0];
 }
 
 /**
@@ -279,7 +304,7 @@ export const Diapason = component$<DiapasonProps>(({ scaleId }) => {
   return (
     <figure
       class="diapason"
-      aria-label={`Diapason de bandola llanera en escala ${scale.value.label}. Afinación ${TUNING_LABEL}. Escala marcada con círculos rojos sobre las cuerdas.`}
+      aria-label={`Diapason de bandola llanera en escala ${scale.value.label}. Afinación ${TUNING_LABEL}. Escala marcada con círculos rojos sobre las cuerdas, y en azul sobre las cuerdas al aire.`}
       data-scale={scaleId}
     >
       <div class="diapason-frame">
@@ -540,7 +565,10 @@ const STYLES = `
 
   /* When the open string is in the current scale, the cell gets a
      very subtle background tint to mark it as the "preferred"
-     fingering. No border, no red — just a barely-there wash. */
+     fingering. No border, no circle — just a barely-there wash. The
+     open-string blue signal lives on the regular fret-0 cell right
+     next to this one (.fret--in-scale[data-fret="0"]::before below),
+     not here; this headstock cell stays plain text, unchanged. */
   .fret--preferred {
     background: rgba(26, 20, 16, 0.04);
   }
@@ -615,6 +643,16 @@ const STYLES = `
     color: var(--color-paper);
   }
 
+  /* The regular fret-0 cell in the fret loop lands on the SAME pitch
+     as the headstock's open-string cell right next to it (both are
+     the open string). Recolor it to the same open-string blue instead
+     of the fretted red so the two adjacent circles agree — red never
+     appears at fret 0. Uses the existing data-fret attribute already
+     on the cell, no new class needed. */
+  .fret--in-scale[data-fret="0"]::before {
+    background: var(--color-open-string);
+  }
+
   /* Click/anim-target flash — .fret--playing pulses the whole cell
      for ~400ms (--motion-click) whenever a click OR an external
      anim-target event (playTuningCheck, playScaleSequence) plays this
@@ -674,13 +712,13 @@ const STYLES = `
   }
 
   /* Tonic: identified by position (fret 0, the open string at the nut)
-     and the red circle. No extra cell marker — the nut + the circle
-     carry the tonic semantic on a real instrument. */
+     and the blue circle when it's in scale. No extra cell marker —
+     the nut + the circle carry the tonic semantic on a real instrument. */
 
   /* Headstock cell — the nut (left border) and the open-string button.
-     Renders as a hollow digitation-red ring spanning the full string
-     width at the nut. The activation marker is the ring itself; the
-     string label sits centered on the string.
+     Always shows the string name; when the open string is in the
+     current scale it also gets the blue circle (.fret--preferred::before
+     above) plus the "abierta" marker, both centered on the string.
 
      DOM order: FIRST in each row (so the open-string target is the
      first keyboard-focusable cell of the row, matching spec S6.1).

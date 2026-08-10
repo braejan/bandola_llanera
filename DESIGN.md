@@ -108,6 +108,7 @@ A four-color saturated folk-modern palette. The terracotta is the poster's groun
 
 ### Functional (not decorative)
 - **Digitation Red** (`#c0392b`): The fifth color, functional only. Marks the scale circles on the strings and the fingering numerals in the diapason. Never used decoratively, never on the poster ground, never as a surface fill. It exists to carry "where to play" and "which finger."
+- **Open-String Blue** (`#245a8f`): A sixth functional color, scoped ONLY to `ChordFretboard`'s chord-tone circle when it sits on fret 0 (an open string, played "al aire" — not fretted). Marks "natural, not digited" as a different signal from a fretted chord tone (marigold), never the reverse. Never used decoratively, never on the poster ground, never as a surface fill, never inside the diapason (which differentiates its own open strings with a text label, not a circle).
 
 ### Neutral
 - **Near-Black Ink** (`#1a1410`): The bandola silhouette, the printed frame borders, the fret wires, the string lines, the tuning pegs, the headstock, the body fill, the text on paper, and the borders of every container. The structural color.
@@ -117,7 +118,7 @@ A four-color saturated folk-modern palette. The terracotta is the poster's groun
 - **Ink on Paper** (`#2b211a`): A slightly lifted ink for body text on paper when full ink is too heavy.
 
 ### Named Rules
-**The Four Poster Colors + Functional Digitation.** The four poster colors (terracotta, marigold, ink, paper) carry the surface. Digitation red is a functional fifth color, used only for the digitation markers (scale circles on the strings, fingering numerals) inside the diapason. It never decorates a surface, never replaces a poster color, and never appears outside the diapason's scale/fingering context.
+**The Four Poster Colors + Functional Digitation.** The four poster colors (terracotta, marigold, ink, paper) carry the surface. Digitation red is a functional fifth color, used only for the digitation markers (scale circles on the strings, fingering numerals) inside the diapason. Open-string blue is a functional sixth color, used only for `ChordFretboard`'s fret-0 chord-tone circle. Neither ever decorates a surface, never replaces a poster color, and never appears outside its one named context.
 
 **The Active-Ink Rule.** The active scale word renders in the ground color (terracotta), not in a new color. The active state is the page speaking, not a control changing.
 

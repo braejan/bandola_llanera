@@ -515,6 +515,20 @@ const STYLES = `
     color: var(--color-ink);
   }
 
+  /* Open string (fret 0) IN the chord — a distinct cool blue instead
+     of the marigold accent, so "played open, not fretted" reads as a
+     different signal from "digited at this fret", not just a
+     coincidental position. Text switches to paper (light-on-dark),
+     the same pairing Diapason's own digitation-red circle uses,
+     since this blue is dark enough that ink text loses contrast. */
+  .chord-fret--open.chord-fret--in-chord::before {
+    background: var(--color-open-string);
+  }
+
+  .chord-fret--open.chord-fret--in-chord .chord-fret-note {
+    color: var(--color-paper);
+  }
+
   .chord-fret--playing {
     animation: fret-pulse var(--motion-click) var(--ease-printed);
   }
